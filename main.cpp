@@ -12,55 +12,12 @@
 #include "extern/stb_image.h"
 
 #include "Geometry.hpp"
+#include "GeometryBuffer.hpp"
+#include "Material.hpp"
+#include "Object.hpp"
 #include "Camera.hpp"
 
 #include <vector>
-
-
-class GeometryBuffer {
-private:
-        GL::Buffer vertices;
-        GL::Buffer normals;
-        GL::Buffer texCoords;
-        GL::Buffer indices;
-        GL::Buffer tangents;
-        GL::Buffer bitangents;
-        unsigned int size;
-
-public:
-        GeometryBuffer(const Geometry& geo):
-                vertices(geo.vertices, GL_STATIC_DRAW),
-                normals(geo.normals, GL_STATIC_DRAW),
-                texCoords(geo.texCoords, GL_STATIC_DRAW),
-                indices(geo.indices, GL_STATIC_DRAW),
-                tangents(geo.tangents, GL_STATIC_DRAW),
-                bitangents(geo.bitangents, GL_STATIC_DRAW),
-                size(geo.indices.size())
-        {}
-
-        void loadGeometry(const Geometry& geo) {
-                vertices.assign(geo.vertices, GL_STATIC_DRAW);
-                normals.assign(geo.normals, GL_STATIC_DRAW);
-                texCoords.assign(geo.texCoords, GL_STATIC_DRAW);
-                indices.assign(geo.indices, GL_STATIC_DRAW);
-                tangents.assign(geo.tangents, GL_STATIC_DRAW);
-                bitangents.assign(geo.bitangents, GL_STATIC_DRAW);
-                size = geo.indices.size();
-        }
-
-        void bind(GL::VertexArray& vao) {
-                vao.bindVertexBuffer<glm::vec3>(0, vertices, 0);
-                vao.bindVertexBuffer<glm::vec3>(1, normals, 0);
-                vao.bindVertexBuffer<glm::vec2>(2, texCoords, 0);
-                vao.bindVertexBuffer<glm::vec3>(3, tangents, 0);
-                vao.bindVertexBuffer<glm::vec3>(4, bitangents, 0);
-        }
-
-        void draw() {
-                indices.bindElems();
-                glDrawElements(GL_TRIANGLES, size, GL_UNSIGNED_INT, NULL);
-        }
-};
 
 
 std::string readFile(const char* filename) {
@@ -73,36 +30,6 @@ std::string readFile(const char* filename) {
         file.close();
         return string;
 }
-
-struct Object {
-        std::shared_ptr<GeometryBuffer> geometry;
-
-        glm::mat4 objTransform;
-        glm::vec3 velocity;
-        glm::vec3 torque;
-
-        Object(glm::mat4 objTransform, std::shared_ptr<GeometryBuffer> geometry):
-                geometry(std::move(geometry)),
-                objTransform(objTransform)
-        {}
-
-        glm::mat4 getTransform() {
-                return objTransform;
-        }
-
-        void update() {
-                float strength = glm::length(torque);
-                if (strength == 0.0f) return;
-                glm::vec3 axis = torque / strength;
-
-                objTransform = glm::rotate(objTransform, strength, axis);
-                objTransform[3] += glm::vec4{velocity, 0.0f};
-
-                float damp = 0.99f;
-                torque *= damp;
-                velocity *= damp;
-        }
-};
 
 struct Scene {
         glm::vec3 backgroundColor;
@@ -150,6 +77,9 @@ struct Renderer {
                 program.uniform("camera", glm::translate(glm::vec3(0, 0, -2)));
                 program.uniform("obj", glm::mat4());
 
+                program.uniform<int>("textureID", 0);
+                program.uniform<int>("normMapID", 1);
+
                 return program;
         }
 
@@ -179,6 +109,13 @@ struct Renderer {
 
         void drawObject(const Object& obj) {
                 program.uniform("obj", obj.objTransform);
+                obj.material->bind();
+                obj.geometry->bind(vao);
+                obj.geometry->draw();
+        }
+
+        void drawObjectGeo(const Object& obj) {
+                program.uniform("obj", obj.objTransform);
                 obj.geometry->bind(vao);
                 obj.geometry->draw();
         }
@@ -186,6 +123,8 @@ struct Renderer {
         void drawScene(const glm::mat4& camera, const Scene& scene) {
                 program.uniform("camera", camera);
                 program.uniform("cameraPos", glm::vec3(glm::inverse(camera) * glm::vec4(0,0,0,1)));
+
+                GL::Framebuffer::unbind();
                 const glm::vec3& bg = scene.backgroundColor;
                 glClearColor(bg.r, bg.g, bg.b, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -258,41 +197,40 @@ int main() {
         // glfwSetKeyCallback(renderer.glfwWindow(), keyCallback);
 
         Geometry brick = Geometry::fromPly("../assets/legobrick.ply");
-        brick.calculateTangents();
         auto buff = std::make_shared<GeometryBuffer>(brick);
 
-        auto obj = std::make_shared<Object>(glm::mat4(), buff);
-        auto obj2 = std::make_shared<Object>(glm::translate(glm::vec3(0, 2.0, 0)), buff);
-
-        // glActiveTexture(GL_TEXTURE0);
-        GL::Texture2D brickTexture;
+        auto brickTexture = std::make_shared<GL::Texture2D>();
         {
                 int w, h, n;
                 unsigned char* data = stbi_load("../assets/textures/BrickTex.png", &w, &h, &n, 4);
                 scope_exit([&] { stbi_image_free(data); });
 
-                brickTexture.assign(0, GL_RGBA, w, h, GL_RGBA, GL_UNSIGNED_BYTE, data);
+                brickTexture->assign(0, GL_RGBA, w, h, GL_RGBA, GL_UNSIGNED_BYTE, data);
         }
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        glActiveTexture(GL_TEXTURE1);
-        GL::Texture2D brickNorms;
+        auto brickNorms = std::make_shared<GL::Texture2D>();
         {
                 int w, h, n;
                 unsigned char* data = stbi_load("../assets/textures/BrickNormals.png", &w, &h, &n, 4);
                 scope_exit([&] { stbi_image_free(data); });
 
-                brickNorms.assign(0, GL_RGBA, w, h, GL_RGBA, GL_UNSIGNED_BYTE, data);
+                brickNorms->assign(0, GL_RGBA, w, h, GL_RGBA, GL_UNSIGNED_BYTE, data);
         }
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        renderer.program.uniform<int>("normMapID", 1);
 
+        auto brickMaterial = std::make_shared<Material>(
+                brickTexture, brickNorms
+        );
+
+        auto obj = std::make_shared<Object>(glm::mat4(), buff, brickMaterial);
+        auto obj2 = std::make_shared<Object>(glm::translate(glm::vec3(0, 2.0, 0)), buff, brickMaterial);
 
         Scene scene;
         scene.backgroundColor = glm::vec3(0.5f, 0.15f, 0.25f);
@@ -302,7 +240,7 @@ int main() {
         for (int i = 0; i < monkeySize; i++) { for (int j = 0; j < monkeySize; j++) {
                 float x = (i - monkeySize/2) * 2;
                 float z = (j + 1) * 2;
-                auto obj = std::make_shared<Object>(glm::translate(glm::vec3(x, 0, z)), buff);
+                auto obj = std::make_shared<Object>(glm::translate(glm::vec3(x, 0, z)), buff, brickMaterial);
                 scene.objects.push_back(std::move(obj));
         }}
 
@@ -324,8 +262,9 @@ int main() {
                 x += 0.01f;
 
                 camera.update(input);
-                // renderer.drawScene(camera.getMatrix(), scene);
                 renderer.drawScene(camera.getMatrix(), scene);
+
+                renderer.glfwWindow.setTitle(std::string{"Hello, World!  FPS:"}.append(std::to_string(1000.0f/(float)timer.elapsedMS())).append(")"));
 
                 timer.roundTo(std::chrono::milliseconds(16));
         }

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -301,11 +303,17 @@ public:
         void bind() {
                 ::glBindTexture(GL_TEXTURE_2D, handle);
         }
+
         void assign(GLint level, GLint internalFormat, GLsizei width,
                     GLsizei height, GLenum format, GLenum type, const GLvoid* data)
         {
                 bind();
                 ::glTexImage2D(GL_TEXTURE_2D, level, internalFormat, width, height, 0, format, type, data);
+        }
+
+        void assign(GLint level, GLint internalFormat, GLsizei width, GLsizei height)
+        {
+                assign(level, internalFormat, width, height, GL_RED, GL_UNSIGNED_BYTE, nullptr);
         }
 
         template<typename T>
@@ -328,6 +336,37 @@ public:
                 assign(level, internalFormat, width, height, GL_RGBA, data);
         }
 };
+
+class Framebuffer;
+
+template<>
+struct wrapper_traits<Framebuffer> {
+        using handle_type = GLuint;
+        static void release(const handle_type& handle) {
+                ::glDeleteFramebuffers(1, &handle);
+        }
+};
+
+class Framebuffer : public Wrapper<Framebuffer> {
+public:
+        Framebuffer() {
+                ::glGenFramebuffers(1, &handle);
+        }
+
+        void bind() {
+                ::glBindFramebuffer(GL_FRAMEBUFFER, handle);
+        }
+
+        static void unbind() {
+                ::glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        }
+
+        void attachTexture(GLenum attachment, const Texture& tex, GLint level) {
+                bind();
+                ::glFramebufferTexture(GL_FRAMEBUFFER, attachment, tex(), level);
+        }
+};
+
 
 class VertexArray;
 

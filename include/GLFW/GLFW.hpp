@@ -63,6 +63,14 @@ public:
         {
         }
 
+        void setTitle(const char* title) {
+                ::glfwSetWindowTitle(handle, title);
+        }
+
+        void setTitle(const std::string& title) {
+                setTitle(title.c_str());
+        }
+
         void makeCurrent() const {
                 ::glfwMakeContextCurrent(handle);
         }

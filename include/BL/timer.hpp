@@ -4,10 +4,10 @@
 
 namespace BL {
 
-using Clock = std::chrono::steady_clock;
-
 class Timer {
 private:
+        using Clock = std::chrono::steady_clock;
+
         const Clock::time_point start;
 public:
         Timer(): start(Clock::now()) {}
@@ -17,6 +17,9 @@ public:
                 if(wait.count() > 0) {
                         std::this_thread::sleep_for(wait);
                 }
+        }
+        int elapsedMS() {
+                return std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - start).count();
         }
 };
 

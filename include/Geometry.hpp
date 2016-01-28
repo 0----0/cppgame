@@ -1,3 +1,6 @@
+
+#pragma once
+
 #include <fstream>
 #include <string>
 #include <sstream>
@@ -8,6 +11,8 @@
 class Geometry {
 private:
         using index_type = uint;
+        bool hasNormals = false;
+        bool hasTangents = false;
 public:
         std::vector<glm::vec3> vertices;
         std::vector<glm::vec3> normals;
@@ -19,6 +24,7 @@ public:
         std::vector<index_type> indices;
 
         void calculateNormals() {
+                if(hasNormals) return;
                 normals.clear();
                 normals.resize(vertices.size(), glm::vec3(0, 0, 0));
 
@@ -39,9 +45,12 @@ public:
                 for (auto& n : normals) {
                         n = glm::normalize(n);
                 }
+
+                hasNormals = true;
         }
 
         void calculateTangents() {
+                if (hasTangents) return;
                 tangents.clear();
                 tangents.resize(vertices.size(), glm::vec3{0, 0, 0});
 
@@ -78,6 +87,8 @@ public:
                 // for (auto& t : bitangents) {
                 //         t = glm::normalize(t);
                 // }
+
+                hasTangents = true;
         }
 
         static Geometry square() {
@@ -260,6 +271,7 @@ public:
                 for(int i = 0; i < vertices.num; ++i) {
                         ret.normals.emplace_back(getFloat(nx,i), getFloat(ny,i), getFloat(nz,i));
                 }
+                ret.hasNormals = true;
 
                 ret.texCoords.reserve(vertices.num);
                 auto& s = vertices.findProp("s"); expect(s.type == "float");
