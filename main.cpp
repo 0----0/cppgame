@@ -7,6 +7,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
+#include <glm/gtx/projection.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "extern/stb_image.h"
@@ -33,6 +34,7 @@ std::string readFile(const char* filename) {
 
 struct Scene {
         glm::vec3 backgroundColor;
+        glm::vec3 sunDirection;
         std::vector<std::shared_ptr<Object>> objects;
 
         void update() {
@@ -44,8 +46,13 @@ struct Scene {
 
 struct Renderer {
         GLFW::Window glfwWindow{initWindow()};
-        GL::Program program{initProgram()};
-        GL::VertexArray vao{initVertexArray(program)};
+        GL::Program renderProgram{initProgram()};
+        GL::VertexArray vao{initVertexArray(renderProgram)};
+
+        GL::Program shadowProg;
+        GL::VertexArray shadowVao;
+        GL::Framebuffer shadowFbuff;
+        GL::Texture2D shadowTex;
 
         static GLFW::Window initWindow() {
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -62,72 +69,162 @@ struct Renderer {
                 return glfwWindow;
         }
 
+        Renderer() {
+                auto vert = GL::Shader::fromString(GL_VERTEX_SHADER, readFile("../shadows_vert.glsl"));
+                // auto frag = GL::Shader::fromString(GL_FRAGMENT_SHADER, readFile("../shadows_frag.glsl"));
+
+                shadowProg.attachShader(vert);
+                // shadowProg.attachShader(frag);
+                shadowProg.link();
+                shadowProg.use();
+
+
+                std::cout << glGetError() << std::endl;
+                shadowTex.assign(0, GL_DEPTH_COMPONENT16, 1024, 1024);
+                std::cout << glGetError() << std::endl;
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+                shadowFbuff.attachTexture(GL_DEPTH_ATTACHMENT, shadowTex, 0);
+                std::cout << glGetError() << std::endl;
+                std::cout << glCheckFramebufferStatus(GL_FRAMEBUFFER) << std::endl;
+
+                shadowVao.vertexAttribFormat<glm::vec3>(shadowProg.attrib("vertPos"), 0);
+                shadowVao.vertexAttribBinding(shadowProg.attrib("vertPos"), 0);
+                shadowVao.enableVertexAttrib(shadowProg.attrib("vertPos"));
+        }
+
         static GL::Program initProgram() {
-                GL::Program program;
+                GL::Program renderProgram;
 
                 auto vert = GL::Shader::fromString(GL_VERTEX_SHADER, readFile("../vert.glsl"));
                 auto frag = GL::Shader::fromString(GL_FRAGMENT_SHADER, readFile("../frag.glsl"));
 
-                program.attachShader(vert);
-                program.attachShader(frag);
-                program.link();
-                program.use();
+                renderProgram.attachShader(vert);
+                renderProgram.attachShader(frag);
+                renderProgram.link();
+                renderProgram.use();
 
-                program.uniform("projection", glm::perspectiveFovRH(3.14159f/2.0f, 1024.0f, 768.0f, 0.01f, 100.0f));
-                program.uniform("camera", glm::translate(glm::vec3(0, 0, -2)));
-                program.uniform("obj", glm::mat4());
+                renderProgram.uniform("projection", glm::perspectiveFovRH(3.14159f/2.0f, 1024.0f, 768.0f, 0.01f, 100.0f));
+                renderProgram.uniform("camera", glm::translate(glm::vec3(0, 0, -2)));
+                renderProgram.uniform("obj", glm::mat4());
 
-                program.uniform<int>("textureID", 0);
-                program.uniform<int>("normMapID", 1);
+                renderProgram.uniform<int>("textureID", 0);
+                renderProgram.uniform<int>("normMapID", 1);
+                renderProgram.uniform<int>("shadowMapID", 4);
 
-                return program;
+                return renderProgram;
         }
 
-        static GL::VertexArray initVertexArray(GL::Program& program) {
+        static GL::VertexArray initVertexArray(GL::Program& renderProgram) {
                 GL::VertexArray vao;
 
-                vao.vertexAttribFormat<glm::vec3>(program.attrib("position"), 0);
-                vao.vertexAttribFormat<glm::vec3>(program.attrib("vertNormal"), 0);
-                vao.vertexAttribFormat<glm::vec2>(program.attrib("vertTex"), 0);
-                vao.vertexAttribFormat<glm::vec3>(program.attrib("vertTangent"), 0);
-                vao.vertexAttribFormat<glm::vec3>(program.attrib("vertBitangent"), 0);
+                auto setupVertexAttrib = [&](const char* name, bool normalize, int buff, auto _T) {
+                        using T = decltype(_T);
+                        auto attrib = renderProgram.attrib(name);
+                        vao.vertexAttribFormat<T>(attrib, normalize);
+                        vao.vertexAttribBinding(attrib, buff);
+                        vao.enableVertexAttrib(attrib);
+                };
 
-                vao.vertexAttribBinding(program.attrib("position"), 0);
-                vao.vertexAttribBinding(program.attrib("vertNormal"), 1);
-                vao.vertexAttribBinding(program.attrib("vertTex"), 2);
-                vao.vertexAttribBinding(program.attrib("vertTangent"), 3);
-                vao.vertexAttribBinding(program.attrib("vertBitangent"), 4);
+                setupVertexAttrib("position", 0, 0, glm::vec3());
+                setupVertexAttrib("vertNormal", 0, 1, glm::vec3());
+                setupVertexAttrib("vertTex", 0, 2, glm::vec2());
+                setupVertexAttrib("vertTangent", 0, 3, glm::vec3());
+                setupVertexAttrib("vertBitangent", 0, 4, glm::vec3());
 
-                vao.enableVertexAttrib(program.attrib("position"));
-                vao.enableVertexAttrib(program.attrib("vertNormal"));
-                vao.enableVertexAttrib(program.attrib("vertTex"));
-                vao.enableVertexAttrib(program.attrib("vertTangent"));
-                vao.enableVertexAttrib(program.attrib("vertBitangent"));
+                // vao.vertexAttribFormat<glm::vec3>(renderProgram.attrib("position"), 0);
+                // vao.vertexAttribFormat<glm::vec3>(renderProgram.attrib("vertNormal"), 0);
+                // vao.vertexAttribFormat<glm::vec2>(renderProgram.attrib("vertTex"), 0);
+                // vao.vertexAttribFormat<glm::vec3>(renderProgram.attrib("vertTangent"), 0);
+                // vao.vertexAttribFormat<glm::vec3>(renderProgram.attrib("vertBitangent"), 0);
+                //
+                // vao.vertexAttribBinding(renderProgram.attrib("position"), 0);
+                // vao.vertexAttribBinding(renderProgram.attrib("vertNormal"), 1);
+                // vao.vertexAttribBinding(renderProgram.attrib("vertTex"), 2);
+                // vao.vertexAttribBinding(renderProgram.attrib("vertTangent"), 3);
+                // vao.vertexAttribBinding(renderProgram.attrib("vertBitangent"), 4);
+                //
+                // vao.enableVertexAttrib(renderProgram.attrib("position"));
+                // vao.enableVertexAttrib(renderProgram.attrib("vertNormal"));
+                // vao.enableVertexAttrib(renderProgram.attrib("vertTex"));
+                // vao.enableVertexAttrib(renderProgram.attrib("vertTangent"));
+                // vao.enableVertexAttrib(renderProgram.attrib("vertBitangent"));
 
                 return vao;
         }
 
         void drawObject(const Object& obj) {
-                program.uniform("obj", obj.objTransform);
+                renderProgram.uniform("obj", obj.objTransform);
                 obj.material->bind();
                 obj.geometry->bind(vao);
                 obj.geometry->draw();
         }
 
-        void drawObjectGeo(const Object& obj) {
-                program.uniform("obj", obj.objTransform);
-                obj.geometry->bind(vao);
+        void drawObjectShadow(const Object& obj) {
+                shadowProg.uniform("obj", obj.objTransform);
+                shadowVao.bindVertexBuffer<glm::vec3>(0, obj.geometry->vertices, 0);
                 obj.geometry->draw();
         }
 
+        void drawShadowmap(glm::vec3 cameraPos, const Scene& scene) {
+                glm::vec3 l = scene.sunDirection;
+                glm::vec3 upVector {0, 1, 0};
+                // if (l.x == 0.f && l.y == 0.f) {
+                //         upVector = {1, 0, 0};
+                // }
+                // glm::vec3 a = glm::normalize(upVector - glm::proj(upVector, l));
+                // glm::vec3 b = glm::normalize(glm::cross(l, a));
+                // glm::vec3 b = glm::normalize(glm::cross(l, upVector));
+                // glm::vec3 a = glm::normalize(glm::cross(b, l));
+                // std::cout << l.x << " " << l.y << " " << l.z << std::endl;
+                // std::cout << a.x << " " << a.y << " " << a.z << std::endl;
+                // std::cout << b.x << " " << b.y << " " << b.z << std::endl;
+                // std::cout << std::endl;
+                // glm::mat4 projView {
+                //         b.x,  a.x, -l.x,  0.f,
+                //         b.y,  a.y, -l.y,  0.f,
+                //         b.z,  a.z, -l.z,  0.f,
+                //         0.f,  0.f,  0.f,  1.f
+                // };
+                // projView[3] = glm::vec4(-cameraPos, 1.f);
+                // projView = glm::inverse(projView);
+                glm::mat4 projView = glm::lookAt(cameraPos,cameraPos + l,upVector);
+
+                projView = glm::ortho(-32.0f, 32.0f, -32.0f, 32.0f, -32.0f, 32.0f) * projView;
+
+                renderProgram.uniform("shadowTransform", projView);
+                shadowProg.uniform("projView", projView);
+
+                glViewport(0, 0, 1024, 1024);
+
+                shadowFbuff.bind();
+                glClear(GL_DEPTH_BUFFER_BIT);
+                for (auto& obj : scene.objects) {
+                        drawObjectShadow(*obj);
+                }
+        }
+
         void drawScene(const glm::mat4& camera, const Scene& scene) {
-                program.uniform("camera", camera);
-                program.uniform("cameraPos", glm::vec3(glm::inverse(camera) * glm::vec4(0,0,0,1)));
+                glm::vec3 cameraPos { glm::inverse(camera) * glm::vec4(0,0,0,1) };
+
+                drawShadowmap(cameraPos, scene);
+
+                renderProgram.use();
+                renderProgram.uniform("camera", camera);
+                renderProgram.uniform("cameraPos", cameraPos);
+                renderProgram.uniform("lightDirection", scene.sunDirection);
+
+                glActiveTexture(GL_TEXTURE4);
+                shadowTex.bind();
 
                 GL::Framebuffer::unbind();
                 const glm::vec3& bg = scene.backgroundColor;
                 glClearColor(bg.r, bg.g, bg.b, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                glViewport(0, 0, 1024, 768);
 
                 for (auto& obj : scene.objects) {
                         drawObject(*obj);
@@ -258,7 +355,7 @@ int main() {
                 // obj->velocity += glm::vec3(obj->objTransform * camMatrix * glm::vec4(input.getMotionInput(), 0.0f)) * 0.005f;
                 // obj->torque += input.get3DOFRotationInput() * 0.02f;
 
-                renderer.program.uniform("lightDirection", glm::vec3(glm::rotate(x,glm::vec3{0,1,0})*glm::vec4(glm::normalize(glm::vec3{-1,-1,-1}),1)));
+                scene.sunDirection = glm::vec3(glm::rotate(x,glm::vec3{0,1,0})*glm::vec4(glm::normalize(glm::vec3{-1,-1,-1}),1));
                 x += 0.01f;
 
                 camera.update(input);

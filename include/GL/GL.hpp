@@ -313,7 +313,7 @@ public:
 
         void assign(GLint level, GLint internalFormat, GLsizei width, GLsizei height)
         {
-                assign(level, internalFormat, width, height, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+                assign(level, internalFormat, width, height, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
         }
 
         template<typename T>

@@ -4,6 +4,8 @@ uniform vec3 lightDirection = normalize(vec3(-1, -1, -1));
 uniform vec3 cameraPos;
 uniform sampler2D textureID;
 uniform sampler2D normMapID;
+uniform sampler2D shadowMapID;
+uniform mat4 shadowTransform;
 
 in vec3 fragNormal;
 in vec2 fragTex;
@@ -13,14 +15,25 @@ in vec3 worldPos;
 
 out vec4 fragColor;
 
+float shade() {
+        vec4 shadowmapHCoords = shadowTransform * vec4(worldPos, 1.0f);
+        vec3 shadowmapCoords = shadowmapHCoords.xyz / shadowmapHCoords.w;
+        shadowmapCoords *= 0.5f;
+        shadowmapCoords += 0.5f;
+
+        float shadow = texture(shadowMapID, shadowmapCoords.xy).r;
+        if (shadow < shadowmapCoords.z - 0.005) {
+                return 0.0f;
+        } else {
+                return 1.0f;
+        }
+}
+
 void main() {
-        // vec3 diffuseColor = vec3(0.7, 0.6, 0.4);
-        // vec3 lightDirection = normalize(worldPos - cameraPos);
         vec2 _fragTex = fragTex;
         _fragTex.t = 1.0f-fragTex.t;
 
         vec3 normMap = texture(normMapID, _fragTex).xyz*2.0f - 1.0f;
-
 
         vec3 realNorm = normalize(normMap.x * fragTangent + normMap.y * fragBitangent + normMap.z * fragNormal);
 
@@ -28,7 +41,6 @@ void main() {
         vec3 ambientColor = vec3(0.05, 0.1, 0.2);
         vec3 specularColor = vec3(0.6, 0.5, 0.3);
         float shininess = 64.0f;
-        // diffuseColor -= ambientColor;
 
         vec3 ambient = ambientColor;
 
@@ -47,11 +59,10 @@ void main() {
                 specular = specularIntensity * specularColor;
         }
 
-        // specular *= texture(textureID, _fragTex).rgb;
-        // ambient *= texture(textureID, _fragTex).rgb;
+        float shadowAmt = shade();
+        // if(shadowAmt == 0.0f) { shadowAmt += 0.4; }
+        specular *= shadowAmt;
+        diffuse *= shadowAmt;
 
         fragColor = vec4(ambient + diffuse + specular, 1.0);
-        // fragColor = vec4(vec3(fragTangent.x)/2.0f+0.5f, 1.0f);
-        // fragColor = vec4(fragTex, 0.0f, 1.0f);
-        // fragColor = vec4(texture(textureID, _fragTex));
 }
