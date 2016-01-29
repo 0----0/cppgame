@@ -4,7 +4,7 @@ uniform vec3 lightDirection = normalize(vec3(-1, -1, -1));
 uniform vec3 cameraPos;
 uniform sampler2D textureID;
 uniform sampler2D normMapID;
-uniform sampler2D shadowMapID;
+uniform sampler2DShadow shadowMapID;
 uniform mat4 shadowTransform;
 
 in vec3 fragNormal;
@@ -20,13 +20,15 @@ float shade() {
         vec3 shadowmapCoords = shadowmapHCoords.xyz / shadowmapHCoords.w;
         shadowmapCoords *= 0.5f;
         shadowmapCoords += 0.5f;
+        shadowmapCoords.z -= 0.005;
 
-        float shadow = texture(shadowMapID, shadowmapCoords.xy).r;
-        if (shadow < shadowmapCoords.z - 0.005) {
-                return 0.0f;
-        } else {
-                return 1.0f;
-        }
+        return texture(shadowMapID, shadowmapCoords);
+        // float shadow = texture(shadowMapID, shadowmapCoords.xy).r;
+        // if (shadow < shadowmapCoords.z - 0.005) {
+        //         return 0.0f;
+        // } else {
+        //         return 1.0f;
+        // }
 }
 
 void main() {
@@ -59,10 +61,11 @@ void main() {
                 specular = specularIntensity * specularColor;
         }
 
-        float shadowAmt = shade();
-        // if(shadowAmt == 0.0f) { shadowAmt += 0.4; }
-        specular *= shadowAmt;
-        diffuse *= shadowAmt;
+        float visibility = shade();
+        specular *= visibility;
+        // if(visibility == 0.0f) { visibility += 0.4; }
+        visibility = visibility*0.8f + 0.2f;
+        diffuse *= visibility;
 
         fragColor = vec4(ambient + diffuse + specular, 1.0);
 }

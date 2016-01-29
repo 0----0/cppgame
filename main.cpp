@@ -71,25 +71,19 @@ struct Renderer {
 
         Renderer() {
                 auto vert = GL::Shader::fromString(GL_VERTEX_SHADER, readFile("../shadows_vert.glsl"));
-                // auto frag = GL::Shader::fromString(GL_FRAGMENT_SHADER, readFile("../shadows_frag.glsl"));
-
                 shadowProg.attachShader(vert);
-                // shadowProg.attachShader(frag);
                 shadowProg.link();
                 shadowProg.use();
 
-
-                std::cout << glGetError() << std::endl;
                 shadowTex.assign(0, GL_DEPTH_COMPONENT16, 1024, 1024);
-                std::cout << glGetError() << std::endl;
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
 
                 shadowFbuff.attachTexture(GL_DEPTH_ATTACHMENT, shadowTex, 0);
-                std::cout << glGetError() << std::endl;
-                std::cout << glCheckFramebufferStatus(GL_FRAMEBUFFER) << std::endl;
 
                 shadowVao.vertexAttribFormat<glm::vec3>(shadowProg.attrib("vertPos"), 0);
                 shadowVao.vertexAttribBinding(shadowProg.attrib("vertPos"), 0);
@@ -135,24 +129,6 @@ struct Renderer {
                 setupVertexAttrib("vertTangent", 0, 3, glm::vec3());
                 setupVertexAttrib("vertBitangent", 0, 4, glm::vec3());
 
-                // vao.vertexAttribFormat<glm::vec3>(renderProgram.attrib("position"), 0);
-                // vao.vertexAttribFormat<glm::vec3>(renderProgram.attrib("vertNormal"), 0);
-                // vao.vertexAttribFormat<glm::vec2>(renderProgram.attrib("vertTex"), 0);
-                // vao.vertexAttribFormat<glm::vec3>(renderProgram.attrib("vertTangent"), 0);
-                // vao.vertexAttribFormat<glm::vec3>(renderProgram.attrib("vertBitangent"), 0);
-                //
-                // vao.vertexAttribBinding(renderProgram.attrib("position"), 0);
-                // vao.vertexAttribBinding(renderProgram.attrib("vertNormal"), 1);
-                // vao.vertexAttribBinding(renderProgram.attrib("vertTex"), 2);
-                // vao.vertexAttribBinding(renderProgram.attrib("vertTangent"), 3);
-                // vao.vertexAttribBinding(renderProgram.attrib("vertBitangent"), 4);
-                //
-                // vao.enableVertexAttrib(renderProgram.attrib("position"));
-                // vao.enableVertexAttrib(renderProgram.attrib("vertNormal"));
-                // vao.enableVertexAttrib(renderProgram.attrib("vertTex"));
-                // vao.enableVertexAttrib(renderProgram.attrib("vertTangent"));
-                // vao.enableVertexAttrib(renderProgram.attrib("vertBitangent"));
-
                 return vao;
         }
 
@@ -172,25 +148,6 @@ struct Renderer {
         void drawShadowmap(glm::vec3 cameraPos, const Scene& scene) {
                 glm::vec3 l = scene.sunDirection;
                 glm::vec3 upVector {0, 1, 0};
-                // if (l.x == 0.f && l.y == 0.f) {
-                //         upVector = {1, 0, 0};
-                // }
-                // glm::vec3 a = glm::normalize(upVector - glm::proj(upVector, l));
-                // glm::vec3 b = glm::normalize(glm::cross(l, a));
-                // glm::vec3 b = glm::normalize(glm::cross(l, upVector));
-                // glm::vec3 a = glm::normalize(glm::cross(b, l));
-                // std::cout << l.x << " " << l.y << " " << l.z << std::endl;
-                // std::cout << a.x << " " << a.y << " " << a.z << std::endl;
-                // std::cout << b.x << " " << b.y << " " << b.z << std::endl;
-                // std::cout << std::endl;
-                // glm::mat4 projView {
-                //         b.x,  a.x, -l.x,  0.f,
-                //         b.y,  a.y, -l.y,  0.f,
-                //         b.z,  a.z, -l.z,  0.f,
-                //         0.f,  0.f,  0.f,  1.f
-                // };
-                // projView[3] = glm::vec4(-cameraPos, 1.f);
-                // projView = glm::inverse(projView);
                 glm::mat4 projView = glm::lookAt(cameraPos,cameraPos + l,upVector);
 
                 projView = glm::ortho(-32.0f, 32.0f, -32.0f, 32.0f, -32.0f, 32.0f) * projView;
