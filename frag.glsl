@@ -6,9 +6,8 @@ uniform sampler2D textureID;
 uniform sampler2D normMapID;
 // uniform sampler2D shadowMapID;
 uniform sampler2DArray shadowmapArrayID;
+uniform int numShadowLevels;
 uniform mat4 shadowTransform;
-uniform float shadowDepth;
-uniform float shadowScale[2];
 
 in vec3 fragNormal;
 in vec2 fragTex;
@@ -70,54 +69,46 @@ vec2 poissonDisk[36] = vec2[](
         vec2(0.00145936, 0.959284)
 );
 
-float sampleShadowmaps(vec2 coords) {
-        // vec3 coords3 = vec3(coords, 0.0f);
-        // return texture(shadowmapArrayID, coords3).r;
-        // while(coords3.z < 1.0f && (coords3.x > 1.0f || coords3.x < 0.0f || coords3.y > 1.0f || coords3.y < 0.0f)) {
-        //         coords3.xy = coords3.xy * 0.5f + vec2(0.25f);
-        //         coords3.z += 1.0f;
-        // }
-        vec3 coords3;
-        coords3.z = log2(ceil(max(abs(coords.x), abs(coords.y))));
-        coords3.xy = coords.xy/exp2(coords3.z + 1.0f);
-        // coords3 *= 0.5f;
-        coords3 += 0.5f;
-        return texture(shadowmapArrayID, coords3).r;
-}
-
-vec3 sampleAsdf(vec2 coords) {
-        vec3 coords3;
-        coords3.z = log2(ceil(max(abs(coords.x), abs(coords.y))));
-        coords3.xy = coords.xy/exp2(coords3.z + 1.0f);
-        // coords3 *= 0.5f;
-        coords3 += 0.5f;
-        return coords3;
-}
-
 float shade(vec3 pos, vec3 normal) {
         vec4 shadowmapHCoords = shadowTransform * vec4(pos, 1.0f);
         vec3 shadowmapCoords = shadowmapHCoords.xyz / shadowmapHCoords.w;
         // shadowmapCoords *= 0.5f;
         // shadowmapCoords += 0.5f;
-        // shadowmapCoords.z -= 0.0005;
         shadowmapCoords.z *= 0.5f;
         shadowmapCoords.z += 0.5f;
         shadowmapCoords.z -= 2.0f*0.25f/1024.0f;
+        // float asdf = vec3(1.0f, 1.0f, 1.0f).x;
+        // if(shadowmapCoords.z * 100000.0f - ceil(shadowmapCoords.z * 100000.0f) > 0.9f) {
+        //         // shadowmapCoords.y += 0.23082093f;
+        //         asdf = vec3(0.9f, 0.9f, 0.9f).x;
+        // }
+        float shadowmapScalar = 1.0f;
+        float shadowmapLevel = 0.0f;
+        float safetyBorder = 8.0f/1024.0f;
+        float maxLevel = float(numShadowLevels - 1);
+        while ((shadowmapCoords.x > 1.0f - safetyBorder
+            || shadowmapCoords.x < -1.0f + safetyBorder
+            || shadowmapCoords.y > 1.0f - safetyBorder
+            || shadowmapCoords.y < -1.0f + safetyBorder)
+            && shadowmapLevel < maxLevel)
+        {
+                shadowmapScalar *= 0.5f;
+                shadowmapCoords.xy *= 0.5f;
+                shadowmapLevel += 1.0f;
+        }
 
-        // vec3 shadowNormal = vec3(shadowTransform * vec4(normal, 0.0f));
-        // float shadowSlopeInv1 = -shadowNormal.x / shadowNormal.z;
-        // float shadowSlopeInv2 = -shadowNormal.y / shadowNormal.z;
-        // float p = 0.25f / 1024.0f;
-        // shadowmapCoords.z -= p*max(abs(shadowSlopeInv1), abs(shadowSlopeInv2));
+        // return shadowmapLevel;
 
-        // return texture(shadowMapID, shadowmapCoords);
+        // shadowmapCoords.xy *= shadowmapScalar;
+        shadowmapCoords.xy *= 0.5f;
+        shadowmapCoords.xy += 0.5f;
+
+        float checkRadius = shadowmapScalar * 8.0f / 1024.0f;
         float radius = 0.0f;
         float divi = 0.0f;
         for (int i = 0; i < 10; i++) {
-                vec2 coords = shadowmapCoords.xy + poissonDiskSmall[i] * 8.0f / 1024.0f;
-                // float shadowSample = texture(shadowMapID, coords).r;
-                // float shadowSample = texture(shadowmapArrayID, vec3(coords, 0.0f)).r;
-                float shadowSample = sampleShadowmaps(coords);
+                vec2 coords = shadowmapCoords.xy + poissonDiskSmall[i] * checkRadius;
+                float shadowSample = texture(shadowmapArrayID, vec3(coords, shadowmapLevel)).r;
                 float smolRadius = shadowmapCoords.z - shadowSample;
                 if (smolRadius < 0.0f) continue;
                 radius += smolRadius;
@@ -128,13 +119,13 @@ float shade(vec3 pos, vec3 normal) {
         radius *= 512.0f;
         radius /= divi;
         radius = clamp(radius, 0.0f, 8.0f);
+        radius /= 1024.0f;
+        radius *= shadowmapScalar;
 
         float visibility = 0.0f;
         for (int i = 0; i < 36; i++) {
-                vec2 coords = shadowmapCoords.xy + poissonDisk[i]*radius/1024.0f;
-                // float shadowSample = texture(shadowMapID, coords).r;
-                // float shadowSample = texture(shadowmapArrayID, vec3(coords, 0.0f)).r;
-                float shadowSample = sampleShadowmaps(coords);
+                vec2 coords = shadowmapCoords.xy + (poissonDisk[i])*radius;
+                float shadowSample = texture(shadowmapArrayID, vec3(coords, shadowmapLevel)).r;
                 if(shadowSample >= shadowmapCoords.z) {
                         visibility += 1/36.0f;
                 }
@@ -147,16 +138,6 @@ float shade(vec3 pos, vec3 normal) {
         // } else {
         //         return 1.0f;
         // }
-}
-
-vec3 shadeasdf(vec3 pos, vec3 normal) {
-        vec4 shadowmapHCoords = shadowTransform * vec4(pos, 1.0f);
-        vec3 shadowmapCoords = shadowmapHCoords.xyz / shadowmapHCoords.w;
-        // shadowmapCoords *= 0.5f;
-        // shadowmapCoords += 0.5f;
-        // shadowmapCoords.z -= 0.0005;
-        shadowmapCoords.z -= 2.0f*0.25f/1024.0f;
-        return sampleAsdf(shadowmapCoords.xy);
 }
 
 void main() {

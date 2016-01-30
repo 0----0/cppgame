@@ -130,7 +130,7 @@ struct Renderer {
         GL::VertexArray shadowVao;
         Shadowmap shadowmap{1024, 1024, 32.0f, 256.0f};
         Shadowmap shadowmap2{1024, 1024, 64.0f, 256.0f};
-        ShadowmapArray shadowmaps {1024, 1024, {32, 64}, 256};
+        ShadowmapArray shadowmaps {1024, 1024, {32, 64, 128, 256}, 256};
 
         static GLFW::Window initWindow() {
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -265,6 +265,7 @@ struct Renderer {
                 // shadowmap.shadowTex.bind();
                 shadowmaps.shadowTex.bind();
                 renderProgram.uniform("shadowTransform", shadowmaps.projView(0, cameraPos, scene.sunDirection));
+                renderProgram.uniform<int>("numShadowLevels", shadowmaps.numShadowmaps());
 
                 GL::Framebuffer::unbind();
                 const glm::vec3& bg = scene.backgroundColor;
