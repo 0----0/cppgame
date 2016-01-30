@@ -63,8 +63,6 @@ struct Shadowmap {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
 
                 shadowFbuff.attachTexture(GL_DEPTH_ATTACHMENT, shadowTex, 0);
         }
@@ -85,8 +83,6 @@ struct Renderer {
 
         GL::Program shadowProg;
         GL::VertexArray shadowVao;
-        // GL::Framebuffer shadowFbuff;
-        // GL::Texture2D shadowTex;
         Shadowmap shadowmap{1024, 1024, 32.0f, 256.0f};
         Shadowmap shadowmap2{1024, 1024, 64.0f, 256.0f};
 
@@ -94,7 +90,7 @@ struct Renderer {
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
                 glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-                glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+                // glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
                 GLFW::Window glfwWindow{1024, 768, "Hello, World!"};
                 glfwWindow.makeCurrent();
 
@@ -115,16 +111,6 @@ struct Renderer {
                 shadowVao.vertexAttribFormat<glm::vec3>(shadowProg.attrib("vertPos"), 0);
                 shadowVao.vertexAttribBinding(shadowProg.attrib("vertPos"), 0);
                 shadowVao.enableVertexAttrib(shadowProg.attrib("vertPos"));
-
-                // shadowTex.assign(0, GL_DEPTH_COMPONENT16, 1024, 1024);
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
-                //
-                // shadowFbuff.attachTexture(GL_DEPTH_ATTACHMENT, shadowTex, 0);
         }
 
         static GL::Program initProgram() {
@@ -220,7 +206,9 @@ struct Renderer {
                 GL::Framebuffer::unbind();
                 const glm::vec3& bg = scene.backgroundColor;
                 glClearColor(bg.r, bg.g, bg.b, 1.0f);
-                glViewport(0, 0, 1024, 768);
+                auto windowSize = glfwWindow.getSize();
+                glViewport(0, 0, windowSize.x, windowSize.y);
+                renderProgram.uniform("projection", glm::perspectiveFovRH(3.14159f/2.0f, windowSize.x, windowSize.y, 0.01f, 100.0f));
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 // glCullFace(GL_BACK);
 
@@ -237,13 +225,6 @@ glm::mat4 getLockedCamera(const Object& obj) {
         view = glm::rotate((float)M_PI, glm::vec3{0, 1, 0}) * view;
         view[3] += glm::vec4{0, -1, -2, 0};
         return view;
-}
-
-static void focusCallback(GLFWwindow* window, int focused) {
-        if (focused) {
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        }
 }
 
 static void keyCallback(GLFWwindow* window, int key, int scnacode, int action, int mods) {
@@ -287,8 +268,7 @@ int main() {
 
         Renderer renderer;
         glfwSetInputMode(renderer.glfwWindow(), GLFW_STICKY_KEYS, GL_FALSE);
-        glfwSetInputMode(renderer.glfwWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        glfwSetWindowFocusCallback(renderer.glfwWindow(), focusCallback);
+        // glfwSetWindowFocusCallback(renderer.glfwWindow(), focusCallback);
         // glfwSetKeyCallback(renderer.glfwWindow(), keyCallback);
 
         Geometry brick = Geometry::fromPly("../assets/legobrick.ply");
