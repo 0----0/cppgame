@@ -44,6 +44,40 @@ struct Scene {
         }
 };
 
+struct Shadowmap {
+        GL::Texture2D shadowTex;
+        GL::Framebuffer shadowFbuff;
+        uint xRes;
+        uint yRes;
+        float size;
+        float depth;
+
+        Shadowmap(uint xRes, uint yRes, float size, float depth):
+                xRes(xRes), yRes(yRes), size(size), depth(depth)
+        {
+
+                shadowTex.assign(0, GL_DEPTH_COMPONENT16, xRes, yRes);
+                float borderColor[4]{1.0f, 1.0f, 1.0f, 1.0f};
+                glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+
+                shadowFbuff.attachTexture(GL_DEPTH_ATTACHMENT, shadowTex, 0);
+        }
+
+        glm::mat4 projView(glm::vec3 eye, glm::vec3 light) {
+                auto view = glm::lookAt(eye, eye + light, {0,1,0});
+                float off = size/2.0f;
+                float doff = depth/2.0f;
+                auto proj = glm::ortho(-off, off, -off, off, -doff, doff);
+                return proj * view;
+        }
+};
+
 struct Renderer {
         GLFW::Window glfwWindow{initWindow()};
         GL::Program renderProgram{initProgram()};
@@ -51,13 +85,16 @@ struct Renderer {
 
         GL::Program shadowProg;
         GL::VertexArray shadowVao;
-        GL::Framebuffer shadowFbuff;
-        GL::Texture2D shadowTex;
+        // GL::Framebuffer shadowFbuff;
+        // GL::Texture2D shadowTex;
+        Shadowmap shadowmap{1024, 1024, 32.0f, 256.0f};
+        Shadowmap shadowmap2{1024, 1024, 64.0f, 256.0f};
 
         static GLFW::Window initWindow() {
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
                 glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+                glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
                 GLFW::Window glfwWindow{1024, 768, "Hello, World!"};
                 glfwWindow.makeCurrent();
 
@@ -75,19 +112,19 @@ struct Renderer {
                 shadowProg.link();
                 shadowProg.use();
 
-                shadowTex.assign(0, GL_DEPTH_COMPONENT16, 1024, 1024);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
-
-                shadowFbuff.attachTexture(GL_DEPTH_ATTACHMENT, shadowTex, 0);
-
                 shadowVao.vertexAttribFormat<glm::vec3>(shadowProg.attrib("vertPos"), 0);
                 shadowVao.vertexAttribBinding(shadowProg.attrib("vertPos"), 0);
                 shadowVao.enableVertexAttrib(shadowProg.attrib("vertPos"));
+
+                // shadowTex.assign(0, GL_DEPTH_COMPONENT16, 1024, 1024);
+                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+                //
+                // shadowFbuff.attachTexture(GL_DEPTH_ATTACHMENT, shadowTex, 0);
         }
 
         static GL::Program initProgram() {
@@ -145,20 +182,21 @@ struct Renderer {
                 obj.geometry->draw();
         }
 
-        void drawShadowmap(glm::vec3 cameraPos, const Scene& scene) {
+        void drawShadowmap(glm::vec3 cameraPos, const Scene& scene, Shadowmap& shMap) {
                 glm::vec3 l = scene.sunDirection;
-                glm::vec3 upVector {0, 1, 0};
-                glm::mat4 projView = glm::lookAt(cameraPos,cameraPos + l,upVector);
+                // glm::vec3 upVector {0, 1, 0};
+                // glm::mat4 projView = glm::lookAt(cameraPos,cameraPos + l,upVector);
+                //
+                // float off = shMap.size/2.0f;
+                // projView = glm::ortho(-off, off, -off, off, -off, off) * projView;
 
-                projView = glm::ortho(-32.0f, 32.0f, -32.0f, 32.0f, -32.0f, 32.0f) * projView;
+                shadowProg.uniform("projView", shMap.projView(cameraPos, l));
 
-                renderProgram.uniform("shadowTransform", projView);
-                shadowProg.uniform("projView", projView);
+                glViewport(0, 0, shMap.xRes, shMap.yRes);
 
-                glViewport(0, 0, 1024, 1024);
-
-                shadowFbuff.bind();
+                shMap.shadowFbuff.bind();
                 glClear(GL_DEPTH_BUFFER_BIT);
+                // glCullFace(GL_FRONT);
                 for (auto& obj : scene.objects) {
                         drawObjectShadow(*obj);
                 }
@@ -167,7 +205,8 @@ struct Renderer {
         void drawScene(const glm::mat4& camera, const Scene& scene) {
                 glm::vec3 cameraPos { glm::inverse(camera) * glm::vec4(0,0,0,1) };
 
-                drawShadowmap(cameraPos, scene);
+                drawShadowmap(cameraPos, scene, shadowmap);
+                drawShadowmap(cameraPos, scene, shadowmap2);
 
                 renderProgram.use();
                 renderProgram.uniform("camera", camera);
@@ -175,13 +214,15 @@ struct Renderer {
                 renderProgram.uniform("lightDirection", scene.sunDirection);
 
                 glActiveTexture(GL_TEXTURE4);
-                shadowTex.bind();
+                shadowmap.shadowTex.bind();
+                renderProgram.uniform("shadowTransform", shadowmap.projView(cameraPos, scene.sunDirection));
 
                 GL::Framebuffer::unbind();
                 const glm::vec3& bg = scene.backgroundColor;
                 glClearColor(bg.r, bg.g, bg.b, 1.0f);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 glViewport(0, 0, 1024, 768);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                // glCullFace(GL_BACK);
 
                 for (auto& obj : scene.objects) {
                         drawObject(*obj);
@@ -317,6 +358,7 @@ int main() {
 
                 camera.update(input);
                 renderer.drawScene(camera.getMatrix(), scene);
+                // renderer.drawScene(getLockedCamera(*obj), scene);
 
                 renderer.glfwWindow.setTitle(std::string{"Hello, World!  FPS:"}.append(std::to_string(1000.0f/(float)timer.elapsedMS())).append(")"));
 
