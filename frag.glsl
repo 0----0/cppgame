@@ -72,16 +72,7 @@ vec2 poissonDisk[36] = vec2[](
 float shade(vec3 pos, vec3 normal) {
         vec4 shadowmapHCoords = shadowTransform * vec4(pos, 1.0f);
         vec3 shadowmapCoords = shadowmapHCoords.xyz / shadowmapHCoords.w;
-        // shadowmapCoords *= 0.5f;
-        // shadowmapCoords += 0.5f;
-        shadowmapCoords.z *= 0.5f;
-        shadowmapCoords.z += 0.5f;
-        shadowmapCoords.z -= 2.0f*0.25f/1024.0f;
-        // float asdf = vec3(1.0f, 1.0f, 1.0f).x;
-        // if(shadowmapCoords.z * 100000.0f - ceil(shadowmapCoords.z * 100000.0f) > 0.9f) {
-        //         // shadowmapCoords.y += 0.23082093f;
-        //         asdf = vec3(0.9f, 0.9f, 0.9f).x;
-        // }
+
         float shadowmapScalar = 1.0f;
         float shadowmapLevel = 0.0f;
         float safetyBorder = 8.0f/1024.0f;
@@ -97,11 +88,10 @@ float shade(vec3 pos, vec3 normal) {
                 shadowmapLevel += 1.0f;
         }
 
-        // return shadowmapLevel;
 
-        // shadowmapCoords.xy *= shadowmapScalar;
-        shadowmapCoords.xy *= 0.5f;
-        shadowmapCoords.xy += 0.5f;
+        shadowmapCoords *= 0.5f;
+        shadowmapCoords += 0.5f;
+        shadowmapCoords.z -= 2.0f*0.25f/1024.0f;
 
         float checkRadius = shadowmapScalar * 8.0f / 1024.0f;
         float radius = 0.0f;
@@ -119,8 +109,8 @@ float shade(vec3 pos, vec3 normal) {
         radius *= 512.0f;
         radius /= divi;
         radius = clamp(radius, 0.0f, 8.0f);
-        radius /= 1024.0f;
         radius *= shadowmapScalar;
+        radius /= 1024.0f;
 
         float visibility = 0.0f;
         for (int i = 0; i < 36; i++) {
@@ -130,14 +120,8 @@ float shade(vec3 pos, vec3 normal) {
                         visibility += 1/36.0f;
                 }
         }
+
         return visibility;
-        // return shadowSlopeInv1;
-        // float shadow = texture(shadowMapID, shadowmapCoords.xy).r;
-        // if (shadow < shadowmapCoords.z - 0.005) {
-        //         return 0.0f;
-        // } else {
-        //         return 1.0f;
-        // }
 }
 
 void main() {
