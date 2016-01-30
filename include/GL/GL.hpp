@@ -198,6 +198,16 @@ GL_UNIFORM_INFO(GL_UNIFORM_INFO_UNWRAP)
 #undef GL_UNIFORM_INFO_UNWRAP
 #undef GL_UNIFORM_INFO
 
+constexpr GLenum getDefaultFormat(GLenum internalFormat) {
+        if (internalFormat == GL_DEPTH_COMPONENT
+            || internalFormat == GL_DEPTH_COMPONENT16
+            || internalFormat == GL_DEPTH_COMPONENT24
+            || internalFormat == GL_DEPTH_COMPONENT32F
+        ) {
+                return GL_DEPTH_COMPONENT;
+        }
+        return GL_RED;
+}
 
 }; // namespace detail
 
@@ -313,7 +323,7 @@ public:
 
         void assign(GLint level, GLint internalFormat, GLsizei width, GLsizei height)
         {
-                assign(level, internalFormat, width, height, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
+                assign(level, internalFormat, width, height, detail::getDefaultFormat(internalFormat), GL_UNSIGNED_BYTE, nullptr);
         }
 
         template<typename T>
@@ -334,6 +344,25 @@ public:
         void assign(GLint level, GLint internalFormat, GLsizei width,
                     GLsizei height, const glm::tvec4<T,P>* data) {
                 assign(level, internalFormat, width, height, GL_RGBA, data);
+        }
+};
+
+class Texture2DArray : public Texture {
+public:
+        void bind() {
+                ::glBindTexture(GL_TEXTURE_2D_ARRAY, handle);
+        }
+        void assign(GLint level, GLint internalFormat, GLsizei width,
+                    GLsizei height, GLsizei depth, GLenum format, GLenum type,
+                    const GLvoid* data)
+        {
+                bind();
+                ::glTexImage3D(GL_TEXTURE_2D_ARRAY, level, internalFormat, width, height, depth, 0, format, type, data);
+        }
+        void assign(GLint level, GLint internalFormat, GLsizei width,
+                    GLsizei height, GLsizei depth)
+        {
+                assign(level, internalFormat, width, height, depth, detail::getDefaultFormat(internalFormat), GL_UNSIGNED_BYTE, nullptr);
         }
 };
 
@@ -364,6 +393,11 @@ public:
         void attachTexture(GLenum attachment, const Texture& tex, GLint level) {
                 bind();
                 ::glFramebufferTexture(GL_FRAMEBUFFER, attachment, tex(), level);
+        }
+
+        void attachTextureLayer(GLenum attachment, const Texture2DArray& texture, GLint level, GLint layer) {
+                bind();
+                ::glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, texture(), level, layer);
         }
 };
 
@@ -529,6 +563,13 @@ public:
                 using uniform_info = detail::uniform_info<T>;
                 use();
                 (*uniform_info::func)(getUniformLocation(name), 1, GL_FALSE, &data[0][0]);
+        }
+
+        template<typename T, std::size_t N>
+        void uniform(const char* name, const T (&data)[N]) {
+                using uniform_info = detail::uniform_info<T>;
+                use();
+                (*uniform_info::func)(getUniformLocation(name), N, uniform_info::value_ptr(data));
         }
 };
 

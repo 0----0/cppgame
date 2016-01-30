@@ -4,8 +4,11 @@ uniform vec3 lightDirection = normalize(vec3(-1, -1, -1));
 uniform vec3 cameraPos;
 uniform sampler2D textureID;
 uniform sampler2D normMapID;
-uniform sampler2D shadowMapID;
+// uniform sampler2D shadowMapID;
+uniform sampler2DArray shadowmapArrayID;
 uniform mat4 shadowTransform;
+uniform float shadowDepth;
+uniform float shadowScale[2];
 
 in vec3 fragNormal;
 in vec2 fragTex;
@@ -14,26 +17,6 @@ in vec3 fragBitangent;
 in vec3 worldPos;
 
 out vec4 fragColor;
-
-// vec2 poissonDiskSmall[4] = vec2[](
-//         vec2( -0.94201624, -0.39906216 ),
-//         vec2( 0.94558609, -0.76890725 ),
-//         vec2( -0.094184101, -0.92938870 ),
-//         vec2( 0.34495938, 0.29387760 )
-// );
-
-// vec2 poissonDiskSmall[10] = vec2[](
-//         vec2(0.528611, 0.783841),
-//         vec2(0.195879, 0.552738),
-//         vec2(0.708068, 0.383469),
-//         vec2(0.888947, 0.660722),
-//         vec2(0.210757, 0.859638),
-//         vec2(0.194944, 0.203398),
-//         vec2(0.498866, 0.202286),
-//         vec2(0.958745, 0.357894),
-//         vec2(0.780851, 0.118539),
-//         vec2(0.446792, 0.491815)
-// );
 
 vec2 poissonDiskSmall[10] = vec2[](
         vec2(-0.124351, -0.845406),
@@ -47,66 +30,6 @@ vec2 poissonDiskSmall[10] = vec2[](
         vec2(0.0245056, 0.54319),
         vec2(0.958218, -0.0199161)
 );
-
-// vec2 poissonDisk[18] = vec2[](
-// vec2(0.547119, 0.310390),
-// vec2(0.350803, 0.197655),
-// vec2(0.206609, 0.327387),
-// vec2(0.742105, 0.411957),
-// vec2(0.370535, 0.396558),
-// vec2(0.587989, 0.535413),
-// vec2(0.398020, 0.0257985),
-// vec2(0.820791, 0.236304),
-// vec2(0.636634, 0.0606192),
-// vec2(0.405776, 0.703943),
-// vec2(0.122073, 0.579017),
-// vec2(0.962447, 0.351133),
-// vec2(0.819056, 0.589548),
-// vec2(0.173270, 0.124762),
-// vec2(0.566686, 0.867161),
-// vec2(0.743633, 0.786623),
-// vec2(0.225741, 0.829914),
-// vec2(0.402693, 0.948379)
-// );
-
-// vec2 poissonDisk[36] = vec2[](
-// vec2(0.395054, 0.684368),
-// vec2(0.578835, 0.797596),
-// vec2(0.402387, 0.830845),
-// vec2(0.551255, 0.647816),
-// vec2(0.225131, 0.642705),
-// vec2(0.303427, 0.493762),
-// vec2(0.26847, 0.813521),
-// vec2(0.473113, 0.473824),
-// vec2(0.692983, 0.688466),
-// vec2(0.629628, 0.92086),
-// vec2(0.474791, 0.96879),
-// vec2(0.801073, 0.849776),
-// vec2(0.336764, 0.953124),
-// vec2(0.409678, 0.329111),
-// vec2(0.603203, 0.277309),
-// vec2(0.606313, 0.439065),
-// vec2(0.789178, 0.60365),
-// vec2(0.0843016, 0.770825),
-// vec2(0.7893, 0.304821),
-// vec2(0.496446, 0.202179),
-// vec2(0.689997, 0.160255),
-// vec2(0.75387, 0.458074),
-// vec2(0.915102, 0.454391),
-// vec2(0.933195, 0.692088),
-// vec2(0.954158, 0.3314),
-// vec2(0.208091, 0.373336),
-// vec2(0.351545, 0.214896),
-// vec2(0.196868, 0.200271),
-// vec2(0.0327486, 0.47858),
-// vec2(0.0817929, 0.266491),
-// vec2(0.0931633, 0.64547),
-// vec2(0.827113, 0.164748),
-// vec2(0.487368, 0.0365336),
-// vec2(0.316865, 0.0886926),
-// vec2(0.629342, 0.0381712),
-// vec2(0.175543, 0.500409)
-// );
 
 vec2 poissonDisk[36] = vec2[](
         vec2(-0.412506, -0.505401),
@@ -147,13 +70,38 @@ vec2 poissonDisk[36] = vec2[](
         vec2(0.00145936, 0.959284)
 );
 
+float sampleShadowmaps(vec2 coords) {
+        // vec3 coords3 = vec3(coords, 0.0f);
+        // return texture(shadowmapArrayID, coords3).r;
+        // while(coords3.z < 1.0f && (coords3.x > 1.0f || coords3.x < 0.0f || coords3.y > 1.0f || coords3.y < 0.0f)) {
+        //         coords3.xy = coords3.xy * 0.5f + vec2(0.25f);
+        //         coords3.z += 1.0f;
+        // }
+        vec3 coords3;
+        coords3.z = log2(ceil(max(abs(coords.x), abs(coords.y))));
+        coords3.xy = coords.xy/exp2(coords3.z + 1.0f);
+        // coords3 *= 0.5f;
+        coords3 += 0.5f;
+        return texture(shadowmapArrayID, coords3).r;
+}
+
+vec3 sampleAsdf(vec2 coords) {
+        vec3 coords3;
+        coords3.z = log2(ceil(max(abs(coords.x), abs(coords.y))));
+        coords3.xy = coords.xy/exp2(coords3.z + 1.0f);
+        // coords3 *= 0.5f;
+        coords3 += 0.5f;
+        return coords3;
+}
 
 float shade(vec3 pos, vec3 normal) {
         vec4 shadowmapHCoords = shadowTransform * vec4(pos, 1.0f);
         vec3 shadowmapCoords = shadowmapHCoords.xyz / shadowmapHCoords.w;
-        shadowmapCoords *= 0.5f;
-        shadowmapCoords += 0.5f;
+        // shadowmapCoords *= 0.5f;
+        // shadowmapCoords += 0.5f;
         // shadowmapCoords.z -= 0.0005;
+        shadowmapCoords.z *= 0.5f;
+        shadowmapCoords.z += 0.5f;
         shadowmapCoords.z -= 2.0f*0.25f/1024.0f;
 
         // vec3 shadowNormal = vec3(shadowTransform * vec4(normal, 0.0f));
@@ -166,22 +114,28 @@ float shade(vec3 pos, vec3 normal) {
         float radius = 0.0f;
         float divi = 0.0f;
         for (int i = 0; i < 10; i++) {
-                float smolRadius = shadowmapCoords.z - texture(shadowMapID, shadowmapCoords.xy + poissonDiskSmall[i]*8.0f/1024.0f).r;
+                vec2 coords = shadowmapCoords.xy + poissonDiskSmall[i] * 8.0f / 1024.0f;
+                // float shadowSample = texture(shadowMapID, coords).r;
+                // float shadowSample = texture(shadowmapArrayID, vec3(coords, 0.0f)).r;
+                float shadowSample = sampleShadowmaps(coords);
+                float smolRadius = shadowmapCoords.z - shadowSample;
                 if (smolRadius < 0.0f) continue;
                 radius += smolRadius;
                 divi += 1.0f;
         }
-        // float radius = shadowmapCoords.z - texture(shadowMapID, shadowmapCoords.xy).r;
+
         if (radius <= 0.0f || divi == 0.0f) { return 1.0f; }
         radius *= 512.0f;
         radius /= divi;
         radius = clamp(radius, 0.0f, 8.0f);
-        // radius *= 1024.0f;
-        // return radius;
+
         float visibility = 0.0f;
         for (int i = 0; i < 36; i++) {
-                // visibility += texture(shadowMapID, shadowmapCoords + vec3(poissonDisk[i]*radius/1024.0f,0.0f))/36.0f;
-                if(texture(shadowMapID, shadowmapCoords.xy + poissonDisk[i]*radius/1024.0f).r >= shadowmapCoords.z) {
+                vec2 coords = shadowmapCoords.xy + poissonDisk[i]*radius/1024.0f;
+                // float shadowSample = texture(shadowMapID, coords).r;
+                // float shadowSample = texture(shadowmapArrayID, vec3(coords, 0.0f)).r;
+                float shadowSample = sampleShadowmaps(coords);
+                if(shadowSample >= shadowmapCoords.z) {
                         visibility += 1/36.0f;
                 }
         }
@@ -195,33 +149,14 @@ float shade(vec3 pos, vec3 normal) {
         // }
 }
 
-float shadeasdf(vec3 pos, vec3 normal) {
+vec3 shadeasdf(vec3 pos, vec3 normal) {
         vec4 shadowmapHCoords = shadowTransform * vec4(pos, 1.0f);
         vec3 shadowmapCoords = shadowmapHCoords.xyz / shadowmapHCoords.w;
-        shadowmapCoords *= 0.5f;
-        shadowmapCoords += 0.5f;
+        // shadowmapCoords *= 0.5f;
+        // shadowmapCoords += 0.5f;
         // shadowmapCoords.z -= 0.0005;
-
-        vec3 shadowNormal = vec3(shadowTransform * vec4(normal, 0.0f));
-        // if(shadowNormal.x  <  0.000001f && shadowNormal.x >= 0.0f) shadowNormal.x  =  0.000001f;
-        // if(shadowNormal.x  > -0.000001f && shadowNormal.x < 0.0f) shadowNormal.x  = -0.000001f;
-        // if(shadowNormal.y  <  0.000001f && shadowNormal.y >= 0.0f) shadowNormal.y  =  0.000001f;
-        // if(shadowNormal.y  > -0.000001f && shadowNormal.y < 0.0f) shadowNormal.y  = -0.000001f;
-        float shadowSlopeInv1 = -shadowNormal.x / shadowNormal.z;
-        float shadowSlopeInv2 = -shadowNormal.y / shadowNormal.z;
-        float p = 0.25f / 1024.0f;
-        shadowmapCoords.z -= p*max(abs(shadowSlopeInv1), abs(shadowSlopeInv2));
-
-        // return texture(shadowMapID, shadowmapCoords);
-        return p*max(abs(shadowSlopeInv1), abs(shadowSlopeInv2));
-        // return abs(shadowNormal.z / shadowNormal.x);
-        // return shadowSlopeInv1;
-        // float shadow = texture(shadowMapID, shadowmapCoords.xy).r;
-        // if (shadow < shadowmapCoords.z - 0.005) {
-        //         return 0.0f;
-        // } else {
-        //         return 1.0f;
-        // }
+        shadowmapCoords.z -= 2.0f*0.25f/1024.0f;
+        return sampleAsdf(shadowmapCoords.xy);
 }
 
 void main() {
@@ -262,4 +197,5 @@ void main() {
         }
 
         fragColor = vec4((ambient + diffuse + specular), 1.0);
+        // fragColor = vec4(vec3(shadeasdf(worldPos, fragNormal)), 1.0);
 }

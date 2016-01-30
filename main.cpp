@@ -19,6 +19,7 @@
 #include "Camera.hpp"
 
 #include <vector>
+#include <initializer_list>
 
 
 std::string readFile(const char* filename) {
@@ -76,6 +77,50 @@ struct Shadowmap {
         }
 };
 
+struct ShadowmapArray {
+        GL::Texture2DArray shadowTex;
+        std::vector<GL::Framebuffer> shadowFbuffs;
+        std::vector<float> sizes;
+        uint xRes;
+        uint yRes;
+        float depth;
+
+        ShadowmapArray(uint xRes, uint yRes, std::initializer_list<float> sizes, float depth):
+                sizes(sizes),
+                xRes(xRes),
+                yRes(yRes),
+                depth(depth)
+        {
+                shadowTex.assign(0, GL_DEPTH_COMPONENT16, xRes, yRes, sizes.size());
+
+                float borderColor[4]{1.0f, 1.0f, 1.0f, 1.0f};
+                glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, borderColor);
+                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+                // glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+                shadowFbuffs.reserve(sizes.size());
+                for(int i = 0; i < sizes.size(); i++) {
+                        shadowFbuffs.emplace_back();
+                        shadowFbuffs.back().attachTextureLayer(GL_DEPTH_ATTACHMENT, shadowTex, 0, i);
+                }
+        }
+
+        glm::mat4 projView(uint i, glm::vec3 eye, glm::vec3 light) const {
+                auto view = glm::lookAt(eye, eye + light, {0,1,0});
+                float off = sizes[i]/2.0f;
+                float doff = depth/2.0f;
+                auto proj = glm::ortho(-off, off, -off, off, -doff, doff);
+                return proj * view;
+        }
+
+        uint numShadowmaps() const {
+                return shadowFbuffs.size();
+        }
+};
+
 struct Renderer {
         GLFW::Window glfwWindow{initWindow()};
         GL::Program renderProgram{initProgram()};
@@ -85,6 +130,7 @@ struct Renderer {
         GL::VertexArray shadowVao;
         Shadowmap shadowmap{1024, 1024, 32.0f, 256.0f};
         Shadowmap shadowmap2{1024, 1024, 64.0f, 256.0f};
+        ShadowmapArray shadowmaps {1024, 1024, {32, 64}, 256};
 
         static GLFW::Window initWindow() {
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -130,7 +176,8 @@ struct Renderer {
 
                 renderProgram.uniform<int>("textureID", 0);
                 renderProgram.uniform<int>("normMapID", 1);
-                renderProgram.uniform<int>("shadowMapID", 4);
+                // renderProgram.uniform<int>("shadowMapID", 4);
+                renderProgram.uniform<int>("shadowmapArrayID", 4);
 
                 return renderProgram;
         }
@@ -188,11 +235,26 @@ struct Renderer {
                 }
         }
 
+        void drawShadowmaps(glm::vec3 cameraPos, const Scene& scene, ShadowmapArray& shMaps) {
+                glm::vec3 l = scene.sunDirection;
+
+                glViewport(0, 0, shMaps.xRes, shMaps.yRes);
+                for (int i = 0; i < shMaps.numShadowmaps(); ++i) {
+                        shadowProg.uniform("projView", shMaps.projView(i, cameraPos, l));
+                        shMaps.shadowFbuffs[i].bind();
+                        glClear(GL_DEPTH_BUFFER_BIT);
+                        for(auto& obj : scene.objects) {
+                                drawObjectShadow(*obj);
+                        }
+                }
+        }
+
         void drawScene(const glm::mat4& camera, const Scene& scene) {
                 glm::vec3 cameraPos { glm::inverse(camera) * glm::vec4(0,0,0,1) };
 
-                drawShadowmap(cameraPos, scene, shadowmap);
-                drawShadowmap(cameraPos, scene, shadowmap2);
+                // drawShadowmap(cameraPos, scene, shadowmap);
+                // drawShadowmap(cameraPos, scene, shadowmap2);
+                drawShadowmaps(cameraPos, scene, shadowmaps);
 
                 renderProgram.use();
                 renderProgram.uniform("camera", camera);
@@ -200,8 +262,9 @@ struct Renderer {
                 renderProgram.uniform("lightDirection", scene.sunDirection);
 
                 glActiveTexture(GL_TEXTURE4);
-                shadowmap.shadowTex.bind();
-                renderProgram.uniform("shadowTransform", shadowmap.projView(cameraPos, scene.sunDirection));
+                // shadowmap.shadowTex.bind();
+                shadowmaps.shadowTex.bind();
+                renderProgram.uniform("shadowTransform", shadowmaps.projView(0, cameraPos, scene.sunDirection));
 
                 GL::Framebuffer::unbind();
                 const glm::vec3& bg = scene.backgroundColor;

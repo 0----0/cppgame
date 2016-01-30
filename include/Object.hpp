@@ -3,6 +3,8 @@
 #include "GeometryBuffer.hpp"
 #include "Material.hpp"
 
+#include <glm/gtx/transform.hpp>
+
 #include <memory>
 
 struct Object {
