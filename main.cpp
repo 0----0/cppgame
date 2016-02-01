@@ -130,7 +130,7 @@ struct Renderer {
         GL::VertexArray shadowVao;
         Shadowmap shadowmap{1024, 1024, 32.0f, 256.0f};
         Shadowmap shadowmap2{1024, 1024, 64.0f, 256.0f};
-        ShadowmapArray shadowmaps {1024, 1024, {32, 64, 128, 256}, 256};
+        ShadowmapArray shadowmaps {1024, 1024, {16, 32, 64, 128, 256}, 256};
 
         static GLFW::Window initWindow() {
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -139,6 +139,8 @@ struct Renderer {
                 // glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
                 GLFW::Window glfwWindow{1024, 768, "Hello, World!"};
                 glfwWindow.makeCurrent();
+
+                // ::glfwSwapInterval(0);
 
                 glewExperimental = GL_TRUE;
                 glewInit();
@@ -405,8 +407,9 @@ int main() {
                 renderer.drawScene(camera.getMatrix(), scene);
                 // renderer.drawScene(getLockedCamera(*obj), scene);
 
-                renderer.glfwWindow.setTitle(std::string{"Hello, World!  FPS:"}.append(std::to_string(1000.0f/(float)timer.elapsedMS())).append(")"));
+                // renderer.glfwWindow.setTitle(std::string{"Hello, World!  FPS:"}.append(std::to_string(1000.0f/(float)timer.elapsedMS())).append(")"));
+                renderer.glfwWindow.setTitle(std::string{"Hello, World!  FPS:"}.append(std::to_string(1000000.0f/(float)timer.elapsedUS())).append(")"));
 
-                timer.roundTo(std::chrono::milliseconds(16));
+                timer.roundTo(std::chrono::microseconds(16666));
         }
 }

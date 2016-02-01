@@ -21,6 +21,9 @@ public:
         int elapsedMS() {
                 return std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - start).count();
         }
+        int elapsedUS() {
+                return std::chrono::duration_cast<std::chrono::microseconds>(Clock::now() - start).count();
+        }
 };
 
 } //namespace BL

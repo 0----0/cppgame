@@ -75,7 +75,7 @@ float shade(vec3 pos, vec3 normal) {
 
         float shadowmapScalar = 1.0f;
         float shadowmapLevel = 0.0f;
-        float safetyBorder = 8.0f/1024.0f;
+        float safetyBorder = 32.0f / 16.0f * 8.0f/1024.0f * 2.0f;
         float maxLevel = float(numShadowLevels - 1);
         while ((shadowmapCoords.x > 1.0f - safetyBorder
             || shadowmapCoords.x < -1.0f + safetyBorder
@@ -91,9 +91,9 @@ float shade(vec3 pos, vec3 normal) {
 
         shadowmapCoords *= 0.5f;
         shadowmapCoords += 0.5f;
-        shadowmapCoords.z -= 2.0f*0.25f/1024.0f;
+        shadowmapCoords.z -= 3.0f*0.25f/1024.0f;
 
-        float checkRadius = shadowmapScalar * 8.0f / 1024.0f;
+        float checkRadius = shadowmapScalar * 8.0f * 32.0f / 16.0f / 1024.0f;
         float radius = 0.0f;
         float divi = 0.0f;
         for (int i = 0; i < 10; i++) {
@@ -110,6 +110,7 @@ float shade(vec3 pos, vec3 normal) {
         radius /= divi;
         radius = clamp(radius, 0.0f, 8.0f);
         radius *= shadowmapScalar;
+        radius *= 32.0f / 16.0f;
         radius /= 1024.0f;
 
         float visibility = 0.0f;
