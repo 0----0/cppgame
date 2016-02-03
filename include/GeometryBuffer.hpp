@@ -20,6 +20,7 @@ public:
         void loadGeometry(Geometry& geo) {
                 geo.calculateNormals();
                 geo.calculateTangents();
+                geo.calculateTexCoords();
                 vertices.assign(geo.vertices, GL_STATIC_DRAW);
                 normals.assign(geo.normals, GL_STATIC_DRAW);
                 texCoords.assign(geo.texCoords, GL_STATIC_DRAW);

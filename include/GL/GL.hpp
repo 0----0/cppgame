@@ -345,6 +345,11 @@ public:
                     GLsizei height, const glm::tvec4<T,P>* data) {
                 assign(level, internalFormat, width, height, GL_RGBA, data);
         }
+
+        void generateMipmap() {
+                bind();
+                ::glGenerateMipmap(GL_TEXTURE_2D);
+        }
 };
 
 class Texture2DArray : public Texture {

@@ -130,7 +130,7 @@ struct Renderer {
         GL::VertexArray shadowVao;
         Shadowmap shadowmap{1024, 1024, 32.0f, 256.0f};
         Shadowmap shadowmap2{1024, 1024, 64.0f, 256.0f};
-        ShadowmapArray shadowmaps {1024, 1024, {16, 32, 64, 128, 256}, 256};
+        ShadowmapArray shadowmaps {1024, 1024, {8, 16, 32, 64, 128, 256}, 256};
 
         static GLFW::Window initWindow() {
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -286,10 +286,10 @@ struct Renderer {
         }
 };
 
-glm::mat4 getLockedCamera(const Object& obj) {
+glm::mat4 getLockedCamera(glm::vec3 offset, const Object& obj) {
         auto view = glm::inverse(obj.objTransform);
         view = glm::rotate((float)M_PI, glm::vec3{0, 1, 0}) * view;
-        view[3] += glm::vec4{0, -1, -2, 0};
+        view[3] += glm::vec4{offset, 0};
         return view;
 }
 
@@ -328,6 +328,47 @@ static void keyCallback(GLFWwindow* window, int key, int scnacode, int action, i
         }
 }
 
+static GL::Texture2D textureFromImage(const std::string& filename) {
+        int w, h, n;
+        unsigned char* data = stbi_load(filename.c_str(), &w, &h, &n, 0);
+        if (!data) { throw std::runtime_error(std::string{"Failed to load image: "}.append(filename)); }
+        scope_exit([&] { stbi_image_free(data); });
+        if (!w || !h) { throw std::runtime_error(std::string{"Empty image: "}.append(filename)); }
+
+        GLenum type;
+        switch (n) {
+        case 1:
+                type = GL_RED;
+                break;
+        case 2:
+                type = GL_RG;
+                break;
+        case 3:
+                type = GL_RGB;
+                break;
+        case 4:
+                type = GL_RGBA;
+                break;
+        default:
+                throw std::runtime_error(std::string{filename}.append(": Unknown number of components: ").append(std::to_string(n)));
+        }
+
+        GL::Texture2D tex;
+        tex.assign(0, type, w, h, type, GL_UNSIGNED_BYTE, data);
+        tex.generateMipmap();
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        return tex;
+}
+
+template<typename T>
+std::shared_ptr<T> share(T&& obj) {
+        return std::make_shared<T>(std::forward<T>(obj));
+}
+
 int main() {
         glfwInit();
         scope_exit([&] { glfwTerminate(); });
@@ -340,31 +381,8 @@ int main() {
         Geometry brick = Geometry::fromPly("../assets/legobrick.ply");
         auto buff = std::make_shared<GeometryBuffer>(brick);
 
-        auto brickTexture = std::make_shared<GL::Texture2D>();
-        {
-                int w, h, n;
-                unsigned char* data = stbi_load("../assets/textures/BrickTex.png", &w, &h, &n, 4);
-                scope_exit([&] { stbi_image_free(data); });
-
-                brickTexture->assign(0, GL_RGBA, w, h, GL_RGBA, GL_UNSIGNED_BYTE, data);
-        }
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        auto brickNorms = std::make_shared<GL::Texture2D>();
-        {
-                int w, h, n;
-                unsigned char* data = stbi_load("../assets/textures/BrickNormals.png", &w, &h, &n, 4);
-                scope_exit([&] { stbi_image_free(data); });
-
-                brickNorms->assign(0, GL_RGBA, w, h, GL_RGBA, GL_UNSIGNED_BYTE, data);
-        }
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        auto brickTexture = share(textureFromImage("../assets/textures/BrickTex.png"));
+        auto brickNorms = share(textureFromImage("../assets/textures/BrickNormals.png"));
 
         auto brickMaterial = std::make_shared<Material>(
                 brickTexture, brickNorms
@@ -377,9 +395,9 @@ int main() {
         scene.backgroundColor = glm::vec3(0.5f, 0.15f, 0.25f);
         scene.objects.push_back(obj);
         scene.objects.push_back(obj2);
-        int monkeySize = 10;
-        for (int i = 0; i < monkeySize; i++) { for (int j = 0; j < monkeySize; j++) {
-                float x = (i - monkeySize/2) * 2;
+        int monkeyCount = 10;
+        for (int i = 0; i < monkeyCount; i++) { for (int j = 0; j < monkeyCount; j++) {
+                float x = (i - monkeyCount/2) * 2;
                 float z = (j + 1) * 2;
                 auto obj = std::make_shared<Object>(glm::translate(glm::vec3(x, 0, z)), buff, brickMaterial);
                 scene.objects.push_back(std::move(obj));
@@ -389,23 +407,29 @@ int main() {
 
         FiveDOFCamera camera;
         InputHandler input(renderer.glfwWindow);
+
+        auto shipGeo = Geometry::fromPly("../assets/ship1 v2 exporty.ply");
+        auto shipBuff = std::make_shared<GeometryBuffer>(shipGeo);
+        auto shipMat = std::make_shared<Material>(brickTexture, brickNorms);
+        auto shipObj = std::make_shared<Object>(glm::mat4(), shipBuff, shipMat);
+        scene.objects.push_back(shipObj);
         while(!renderer.glfwWindow.shouldClose()) {
                 BL::Timer timer;
 
                 input.update();
                 scene.update();
 
-                // auto camMatrix = glm::rotate((float)M_PI, glm::vec3{0, 1, 0});
-                // obj->velocity += glm::vec3(obj->objTransform * camMatrix * glm::vec4(input.getMotionInput(), 0.0f)) * 0.005f;
-                // obj->torque += input.get3DOFRotationInput() * 0.02f;
+                auto camMatrix = glm::rotate((float)M_PI, glm::vec3{0, 1, 0});
+                shipObj->velocity += glm::vec3(shipObj->objTransform * camMatrix * glm::vec4(input.getMotionInput(), 0.0f)) * 0.005f;
+                shipObj->torque += input.get3DOFRotationInput() * 0.02f;
 
                 scene.sunDirection = glm::vec3(glm::rotate(x,glm::vec3{0,1,0})*glm::vec4(glm::normalize(glm::vec3{-1,-1,-1}),1));
                 if(renderer.glfwWindow.getKey(GLFW_KEY_F))
                         x += 0.01f;
 
-                camera.update(input);
-                renderer.drawScene(camera.getMatrix(), scene);
-                // renderer.drawScene(getLockedCamera(*obj), scene);
+                // camera.update(input);
+                // renderer.drawScene(camera.getMatrix(), scene);
+                renderer.drawScene(getLockedCamera(2.0f*glm::vec3{0, -2, -6},*shipObj), scene);
 
                 // renderer.glfwWindow.setTitle(std::string{"Hello, World!  FPS:"}.append(std::to_string(1000.0f/(float)timer.elapsedMS())).append(")"));
                 renderer.glfwWindow.setTitle(std::string{"Hello, World!  FPS:"}.append(std::to_string(1000000.0f/(float)timer.elapsedUS())).append(")"));

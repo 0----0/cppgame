@@ -13,6 +13,7 @@ private:
         using index_type = uint;
         bool hasNormals = false;
         bool hasTangents = false;
+        bool hasTexCoords = false;
 public:
         std::vector<glm::vec3> vertices;
         std::vector<glm::vec3> normals;
@@ -57,6 +58,8 @@ public:
                 bitangents.clear();
                 bitangents.resize(vertices.size(), glm::vec3{0, 0, 0});
 
+                if (!hasTexCoords) return;
+
                 for(auto i = indices.begin(); i != indices.end(); i += 3) {
                         glm::vec3 faceVerts[3];
                         std::transform(i, i+3, faceVerts, [&](auto j) {
@@ -89,6 +92,15 @@ public:
                 // }
 
                 hasTangents = true;
+        }
+
+        void calculateTexCoords() {
+                if (hasTexCoords) return;
+
+                texCoords.clear();
+                texCoords.resize(vertices.size(), glm::vec2{0.0f, 0.0f});
+
+                hasTexCoords = true;
         }
 
         static Geometry square() {
@@ -163,6 +175,14 @@ public:
                                         }
                                 }
                                 throw std::runtime_error {"Could not find property: " + name};
+                        };
+                        const Property* hasProp(const std::string& name) {
+                                for(auto& prop : props) {
+                                        if(prop.name == name) {
+                                                return &prop;
+                                        }
+                                }
+                                return nullptr;
                         };
                 };
 
@@ -274,10 +294,15 @@ public:
                 ret.hasNormals = true;
 
                 ret.texCoords.reserve(vertices.num);
-                auto& s = vertices.findProp("s"); expect(s.type == "float");
-                auto& t = vertices.findProp("t"); expect(t.type == "float");
-                for(int i = 0; i < vertices.num; ++i) {
-                        ret.texCoords.emplace_back(getFloat(s,i), getFloat(t,i));
+                const Property* s;
+                const Property* t;
+                if ((s = vertices.hasProp("s")) && s->type == "float"
+                    && (t = vertices.hasProp("t")) && t->type == "float")
+                {
+                        for(int i = 0; i < vertices.num; ++i) {
+                                ret.texCoords.emplace_back(getFloat(*s,i), getFloat(*t,i));
+                        }
+                        ret.hasTexCoords = true;
                 }
 
                 auto& faces = findElem("face");
