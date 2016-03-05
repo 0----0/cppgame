@@ -73,9 +73,14 @@ float shade(vec3 pos, vec3 normal) {
         vec4 shadowmapHCoords = shadowTransform * vec4(pos, 1.0f);
         vec3 shadowmapCoords = shadowmapHCoords.xyz / shadowmapHCoords.w;
 
+        const float zDepth = 256.0f;
+        const float baseSize = 8.0f;
+        const float res = 1024.0f;
+        const float maxShadowRadius = 0.125f*0.5f;
+
         float shadowmapScalar = 1.0f;
         float shadowmapLevel = 0.0f;
-        float safetyBorder = 32.0f / 8.0f * 8.0f/1024.0f * 2.0f;
+        float safetyBorder = maxShadowRadius / baseSize * 2.0f;
         float maxLevel = float(numShadowLevels - 1);
         while ((shadowmapCoords.x > 1.0f - safetyBorder
             || shadowmapCoords.x < -1.0f + safetyBorder
@@ -91,13 +96,13 @@ float shade(vec3 pos, vec3 normal) {
 
         shadowmapCoords *= 0.5f;
         shadowmapCoords += 0.5f;
-        shadowmapCoords.z -= 0.75f*0.25f/1024.0f/shadowmapScalar;
+        shadowmapCoords.z -= 0.25f/1024.0f/shadowmapScalar;
 
-        float checkRadius = shadowmapScalar * 8.0f * 32.0f / 8.0f / 1024.0f;
+        float checkRadius = maxShadowRadius / baseSize * shadowmapScalar;
         float radius = 0.0f;
         float divi = 0.0f;
-        for (int i = 0; i < 10; i++) {
-                vec2 coords = shadowmapCoords.xy + poissonDiskSmall[i] * checkRadius;
+        for (int i = 0; i < 36; i++) {
+                vec2 coords = shadowmapCoords.xy + poissonDisk[i] * checkRadius;
                 float shadowSample = texture(shadowmapArrayID, vec3(coords, shadowmapLevel)).r;
                 float smolRadius = shadowmapCoords.z - shadowSample;
                 if (smolRadius < 0.0f) continue;
@@ -106,16 +111,19 @@ float shade(vec3 pos, vec3 normal) {
         }
 
         if (radius <= 0.0f || divi == 0.0f) { return 1.0f; }
-        radius *= 512.0f;
+
         radius /= divi;
-        radius = clamp(radius, 0.0f, 8.0f);
+        radius *= zDepth;
+        radius /= 32.0f;
+        // return radius;
+        radius = clamp(radius, 0.0f, maxShadowRadius);
+        radius /= baseSize;
         radius *= shadowmapScalar;
-        radius *= 32.0f / 8.0f;
-        radius /= 1024.0f;
+        // return radius/checkRadius;
 
         float visibility = 0.0f;
         for (int i = 0; i < 36; i++) {
-                vec2 coords = shadowmapCoords.xy + (poissonDisk[i])*radius;
+                vec2 coords = shadowmapCoords.xy + poissonDisk[i] * radius;
                 float shadowSample = texture(shadowmapArrayID, vec3(coords, shadowmapLevel)).r;
                 if(shadowSample >= shadowmapCoords.z) {
                         visibility += 1/36.0f;
@@ -129,11 +137,13 @@ void main() {
         vec2 _fragTex = fragTex;
         _fragTex.t = 1.0f-fragTex.t;
 
-        vec3 normMap = texture(normMapID, _fragTex).xyz*2.0f - 1.0f;
+        vec3 normMap = normalize(texture(normMapID, _fragTex).xyz*2.0f - 1.0f);
 
-        vec3 realNorm = normalize(normMap.x * fragTangent + normMap.y * fragBitangent + normMap.z * fragNormal);
+        vec3 realNorm = normalize(normMap.x * normalize(fragTangent) + normMap.y * normalize(fragBitangent) + normMap.z * normalize(fragNormal));
+        // vec3 realNorm = normalize(fragNormal);
 
         vec3 diffuseColor = texture(textureID, _fragTex).rgb;
+        // vec3 diffuseColor = vec3(1, 0, 0);
         vec3 ambientColor = vec3(0.05, 0.1, 0.2);
         vec3 specularColor = vec3(0.6, 0.5, 0.3);
         float shininess = 64.0f;
@@ -163,4 +173,5 @@ void main() {
         }
 
         fragColor = vec4(ambient + diffuse + specular, 1.0);
+        // fragColor = vec4(vec3(diffuseIntensity)*1000.0f, 1.0);
 }

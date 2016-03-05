@@ -79,17 +79,17 @@ public:
                         glm::vec3 secondVector = (deltaVert2 * deltaUV1.x - deltaVert1 * deltaUV2.x) * invDet;
 
                         for(auto j = i; j < i + 3; ++j) {
-                                tangents.at(*j) = firstVector;
-                                bitangents.at(*j) = secondVector;
+                                tangents.at(*j) += firstVector;
+                                bitangents.at(*j) += secondVector;
                         }
                 }
 
-                // for (auto& t : tangents) {
-                //         t = glm::normalize(t);
-                // }
-                // for (auto& t : bitangents) {
-                //         t = glm::normalize(t);
-                // }
+                for (auto& t : tangents) {
+                        t = glm::normalize(t);
+                }
+                for (auto& t : bitangents) {
+                        t = glm::normalize(t);
+                }
 
                 hasTangents = true;
         }

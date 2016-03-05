@@ -17,6 +17,10 @@ public:
                 loadGeometry(geo);
         }
 
+        GeometryBuffer(Geometry&& geo) {
+                loadGeometry(geo);
+        }
+
         void loadGeometry(Geometry& geo) {
                 geo.calculateNormals();
                 geo.calculateTangents();

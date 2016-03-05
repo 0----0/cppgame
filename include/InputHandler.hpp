@@ -12,7 +12,7 @@ private:
 public:
         InputHandler(GLFW::Window& window): window(window) {
                 ::glfwSetInputMode(window(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                // ::glfwSetWindowFocusCallback(window(), focusCallback);
+
                 window.setFocusCallback([&](GLFW::Window& window, int focused) {
                         if (focused == GL_FALSE && !mouseFree) {
                                 mouseFree = true;
@@ -103,5 +103,9 @@ public:
 
         bool getRightMouse() const {
                 return window.getMouseButton(GLFW_MOUSE_BUTTON_RIGHT);
+        }
+
+        bool getKey(int key) {
+                return window.getKey(key);
         }
 };
