@@ -3,7 +3,7 @@
 #include <string>
 #include <fstream>
 
-std::string readFile(const char* filename) {
+inline std::string readFile(const char* filename) {
         std::string string;
         std::ifstream file(filename);
         file.seekg(0, std::ios::end);

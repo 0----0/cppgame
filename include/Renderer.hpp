@@ -86,7 +86,8 @@ struct ShadowmapArray {
         }
 };
 
-struct Renderer {
+class Renderer {
+public:
         GLFW::Window glfwWindow{initWindow()};
         GL::Program renderProgram{initProgram()};
         GL::VertexArray vao{initVertexArray(renderProgram)};
