@@ -34,7 +34,7 @@ public:
                 size = geo.indices.size();
         }
 
-        void bind(GL::VertexArray& vao) {
+        void bind(GL::VertexArray& vao) const {
                 vao.bindVertexBuffer<glm::vec3>(0, vertices, 0);
                 vao.bindVertexBuffer<glm::vec3>(1, normals, 0);
                 vao.bindVertexBuffer<glm::vec2>(2, texCoords, 0);
@@ -42,7 +42,7 @@ public:
                 vao.bindVertexBuffer<glm::vec3>(4, bitangents, 0);
         }
 
-        void draw() {
+        void draw() const {
                 indices.bindElems();
                 glDrawElements(GL_TRIANGLES, size, GL_UNSIGNED_INT, NULL);
         }

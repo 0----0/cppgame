@@ -266,11 +266,11 @@ public:
                 ::glGenBuffers(1, &handle);
         }
 
-        void bind() {
+        void bind() const {
                 ::glBindBuffer(GL_ARRAY_BUFFER, handle);
         }
 
-        void bindElems() {
+        void bindElems() const {
                 ::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle);
         }
 
@@ -310,7 +310,7 @@ public:
 
 class Texture2D : public Texture {
 public:
-        void bind() {
+        void bind() const {
                 ::glBindTexture(GL_TEXTURE_2D, handle);
         }
 

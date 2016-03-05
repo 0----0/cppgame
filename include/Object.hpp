@@ -8,14 +8,14 @@
 #include <memory>
 
 struct Object {
-        std::shared_ptr<GeometryBuffer> geometry;
+        std::shared_ptr<const GeometryBuffer> geometry;
         std::shared_ptr<Material> material;
 
         glm::mat4 objTransform;
         glm::vec3 velocity;
         glm::vec3 torque;
 
-        Object(glm::mat4 objTransform, std::shared_ptr<GeometryBuffer> geometry,
+        Object(glm::mat4 objTransform, std::shared_ptr<const GeometryBuffer> geometry,
                std::shared_ptr<Material> material):
                 geometry(std::move(geometry)),
                 material(std::move(material)),

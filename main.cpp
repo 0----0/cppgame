@@ -12,6 +12,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "extern/stb_image.h"
 
+#include "AssetManager.hpp"
 #include "Renderer.hpp"
 #include "Scene.hpp"
 #include "Geometry.hpp"
@@ -30,77 +31,6 @@ glm::mat4 getLockedCamera(glm::vec3 offset, const Object& obj) {
         return view;
 }
 
-static void keyCallback(GLFWwindow* window, int key, int scnacode, int action, int mods) {
-        if(key == GLFW_KEY_W) {
-                std::cout << "W ";
-                switch(action) {
-                case GLFW_PRESS:
-                        std::cout << "Press" << std::endl;
-                        break;
-                case GLFW_RELEASE:
-                        std::cout << "Release" << std::endl;
-                        break;
-                case GLFW_REPEAT:
-                        std::cout << "Repeat" << std::endl;
-                        break;
-                default:
-                        std::cout << "???" << std::endl;
-                }
-        }
-        else if(key == GLFW_KEY_E) {
-                std::cout << "E ";
-                switch(action) {
-                case GLFW_PRESS:
-                        std::cout << "Press" << std::endl;
-                        break;
-                case GLFW_RELEASE:
-                        std::cout << "Release" << std::endl;
-                        break;
-                case GLFW_REPEAT:
-                        std::cout << "Repeat" << std::endl;
-                        break;
-                default:
-                        std::cout << "???" << std::endl;
-                }
-        }
-}
-
-static GL::Texture2D textureFromImage(const std::string& filename) {
-        int w, h, n;
-        unsigned char* data = stbi_load(filename.c_str(), &w, &h, &n, 0);
-        if (!data) { throw std::runtime_error(std::string{"Failed to load image: "}.append(filename)); }
-        scope_exit([&] { stbi_image_free(data); });
-        if (!w || !h) { throw std::runtime_error(std::string{"Empty image: "}.append(filename)); }
-
-        GLenum type;
-        switch (n) {
-        case 1:
-                type = GL_RED;
-                break;
-        case 2:
-                type = GL_RG;
-                break;
-        case 3:
-                type = GL_RGB;
-                break;
-        case 4:
-                type = GL_RGBA;
-                break;
-        default:
-                throw std::runtime_error(std::string{filename}.append(": Unknown number of components: ").append(std::to_string(n)));
-        }
-
-        GL::Texture2D tex;
-        tex.assign(0, type, w, h, type, GL_UNSIGNED_BYTE, data);
-        tex.generateMipmap();
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        return tex;
-}
-
 template<typename T>
 inline std::shared_ptr<T> share(T&& obj) {
         return std::make_shared<T>(std::forward<T>(obj));
@@ -108,8 +38,8 @@ inline std::shared_ptr<T> share(T&& obj) {
 
 class TestGame {
         std::unique_ptr<Scene> scene;
-        std::shared_ptr<GeometryBuffer> brickGeo;
-        std::shared_ptr<GeometryBuffer> shipGeo;
+        std::shared_ptr<const GeometryBuffer> brickGeo;
+        std::shared_ptr<const GeometryBuffer> shipGeo;
 
         std::shared_ptr<Material> brickMat;
         std::shared_ptr<Material> shipMat;
@@ -123,11 +53,11 @@ public:
                 scene = std::make_unique<Scene>();
                 scene->backgroundColor = glm::vec3(0.5f, 0.15f, 0.25f);
 
-                brickGeo = std::make_shared<GeometryBuffer>(Geometry::fromPly("../assets/legobrick.ply"));
-                shipGeo  = std::make_shared<GeometryBuffer>(Geometry::fromPly("../assets/ship1 v3.ply"));
+                brickGeo = AssetManager::get().getModelBuffer("legobrick.ply");
+                shipGeo  = AssetManager::get().getModelBuffer("ship1 v3.ply");
 
-                auto brickDiffuse = std::make_shared<GL::Texture2D>(textureFromImage("../assets/textures/BrickTex.png"));
-                auto brickNormals = std::make_shared<GL::Texture2D>(textureFromImage("../assets/textures/BrickNormals2.png"));
+                auto brickDiffuse = AssetManager::get().getImage("BrickTex.png");
+                auto brickNormals = AssetManager::get().getImage("BrickNormals2.png");
                 brickMat = std::make_shared<Material>(brickDiffuse, brickNormals);
                 shipMat = brickMat;
 
@@ -180,8 +110,11 @@ int main() {
 
                 input.update();
                 if (input.getKey(GLFW_KEY_SPACE)) {
-                        game = TestGame();
-                        game.init();
+                        game = [] {
+                                TestGame game;
+                                game.init();
+                                return game;
+                        }();
                 }
                 game.update(input);
                 game.render(renderer);
