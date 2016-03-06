@@ -1,5 +1,5 @@
-#include "GLFW/GLFW.hpp"
 #include "GL/GL.hpp"
+#include "GLFW/GLFW.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>

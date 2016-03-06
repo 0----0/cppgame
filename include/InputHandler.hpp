@@ -1,8 +1,13 @@
+#pragma once
+
+#include "Keymap.hpp"
+
+#include "GLFW/GLFW.hpp"
+
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 #include <iostream>
-
-#include "GLFW/GLFW.hpp"
+#include <memory>
 
 class InputHandler {
 private:
@@ -10,7 +15,12 @@ private:
         glm::vec2 lastPos;
         bool mouseFree = false;
 public:
-        InputHandler(GLFW::Window& window): window(window) {
+        std::shared_ptr<Keymap> keymap;
+
+        InputHandler(GLFW::Window& window, std::shared_ptr<Keymap> _keymap):
+                window( window ),
+                keymap( std::move(_keymap) )
+        {
                 ::glfwSetInputMode(window(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
                 window.setFocusCallback([&](GLFW::Window& window, int focused) {
@@ -38,15 +48,20 @@ public:
                 glfwPollEvents();
         }
 
+        bool getTrigger(const std::string& name) const {
+                auto bind = keymap->getBind(name);
+                return bind != -1 ? window.getKey(bind) : false;
+        }
+
         glm::vec3 getMotionInput() const {
                 glm::vec3 movement(0.0f);
-                if (window.getKey(GLFW_KEY_W)) {
+                if (getTrigger("FORWARD")) {
                         movement += glm::vec3(0.0f, 1.0f, 0.0f);
-                } if (window.getKey(GLFW_KEY_S)) {
+                } if (getTrigger("BACK")) {
                         movement += glm::vec3(0.0f, -1.0f, 0.0f);
-                } if (window.getKey(GLFW_KEY_A)) {
+                } if (getTrigger("LEFT")) {
                         movement += glm::vec3(-1.0f, 0.0f, 0.0f);
-                } if (window.getKey(GLFW_KEY_D)) {
+                } if (getTrigger("RIGHT")) {
                         movement += glm::vec3(1.0f, 0.0f, 0.0f);
                 }
                 std::swap(movement.y, movement.z);

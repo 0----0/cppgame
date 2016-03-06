@@ -76,7 +76,7 @@ float shade(vec3 pos, vec3 normal) {
         const float zDepth = 256.0f;
         const float baseSize = 8.0f;
         const float res = 1024.0f;
-        const float maxShadowRadius = 0.125f*0.5f;
+        const float maxShadowRadius = 0.5f;
 
         float shadowmapScalar = 1.0f;
         float shadowmapLevel = 0.0f;

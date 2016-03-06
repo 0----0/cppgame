@@ -7,7 +7,8 @@
 
 #include <memory>
 
-struct Object {
+class Object {
+public:
         std::shared_ptr<const GeometryBuffer> geometry;
         std::shared_ptr<Material> material;
 
@@ -22,7 +23,7 @@ struct Object {
                 objTransform(objTransform)
         {}
 
-        glm::mat4 getTransform() {
+        glm::mat4 getTransform() const {
                 return objTransform;
         }
 

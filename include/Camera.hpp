@@ -2,7 +2,6 @@
 #include <glm/gtx/transform.hpp>
 
 #include "InputHandler.hpp"
-#include "GLFW/GLFW.hpp"
 
 class SixDOFCamera {
 private:

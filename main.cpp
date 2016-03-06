@@ -15,22 +15,23 @@
 #include "Object.hpp"
 
 #include "TestGame.hpp"
-
-glm::mat4 getLockedCamera(glm::vec3 offset, const Object& obj) {
-        auto view = glm::inverse(obj.objTransform);
-        view = glm::rotate((float)M_PI, glm::vec3{0, 1, 0}) * view;
-        view[3] += glm::vec4{offset, 0};
-        return view;
-}
+#include "TestGame2.hpp"
 
 int main() {
         glfwInit();
         scope_exit([&] { glfwTerminate(); });
 
         Renderer renderer;
-        InputHandler input(renderer.glfwWindow);
 
-        TestGame game;
+        auto keymap = std::make_shared<Keymap>(Keymap({
+                {"FORWARD", GLFW_KEY_W},
+                {"LEFT", GLFW_KEY_A},
+                {"BACK", GLFW_KEY_S},
+                {"RIGHT", GLFW_KEY_D}
+        }));
+        InputHandler input(renderer.glfwWindow, keymap);
+
+        TestGame2 game;
         game.init();
 
         while(!renderer.glfwWindow.shouldClose()) {
@@ -39,7 +40,7 @@ int main() {
                 input.update();
                 if (input.getKey(GLFW_KEY_SPACE)) {
                         game = [] {
-                                TestGame game;
+                                TestGame2 game;
                                 game.init();
                                 return game;
                         }();
