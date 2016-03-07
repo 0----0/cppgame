@@ -1,0 +1,49 @@
+#include "Renderer.hpp"
+
+#include "BulletRenderer.hpp"
+#include "ShadowmapRenderer.hpp"
+
+Renderer::Renderer():
+        shadowRenderer( std::make_unique<ShadowmapRenderer>() ),
+        bulletRenderer( std::make_unique<BulletRenderer>() )
+{}
+Renderer::Renderer(Renderer&&) = default;
+Renderer& Renderer::operator=(Renderer&&) = default;
+Renderer::~Renderer() = default;
+
+void Renderer::drawScene(const glm::mat4& camera, const Scene& scene) {
+        glm::vec3 cameraPos { glm::inverse(camera) * glm::vec4(0,0,0,1) };
+
+        shadowRenderer->drawShadowmaps(cameraPos, scene);
+
+        renderProgram.use();
+        renderProgram.uniform("camera", camera);
+        renderProgram.uniform("cameraPos", cameraPos);
+        renderProgram.uniform("lightDirection", scene.sunDirection);
+
+        glActiveTexture(GL_TEXTURE4);
+        auto& shadowmaps = shadowRenderer->shadowmaps;
+        shadowmaps.shadowTex.bind();
+        renderProgram.uniform("shadowTransform", shadowmaps.projView(0, cameraPos, scene.sunDirection));
+        renderProgram.uniform<int>("numShadowLevels", shadowmaps.numShadowmaps());
+
+        GL::Framebuffer::unbind();
+        const glm::vec3& bg = scene.backgroundColor;
+        glClearColor(bg.r, bg.g, bg.b, 1.0f);
+        auto windowSize = glfwWindow.getSize();
+        glViewport(0, 0, windowSize.x, windowSize.y);
+        renderProgram.uniform("projection", glm::perspectiveFovRH(3.14159f/2.0f, windowSize.x, windowSize.y, 0.01f, 100.0f));
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        for (auto& obj : scene.objects) {
+                drawObject(*obj);
+        }
+
+        if (scene.bulletSystem.get() != nullptr) {
+                auto& bulletSystem = *scene.bulletSystem;
+                bulletSystem.prepareForDraw();
+                bulletRenderer->drawBullets(camera, bulletSystem.numBullets(), bulletSystem.getBuffer(), *bulletSystem.img);
+        }
+
+        glfwWindow.swapBuffers();
+}

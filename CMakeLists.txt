@@ -21,5 +21,5 @@ LIST(APPEND LIB ${OPENGL_LIBRARIES})
 
 include_directories(INC)
 add_executable(cppgame main.cpp AssetManager.cpp TestGame.cpp TestGame2.cpp
-PlayerController.cpp)
+PlayerController.cpp Renderer.cpp)
 target_link_libraries(cppgame ${LIB})
