@@ -6,32 +6,7 @@
 #include "Renderer.hpp"
 #include "InputHandler.hpp"
 #include "PlayerController.hpp"
-
-struct Bullet {
-        glm::vec2 pos;
-        glm::vec2 vel;
-};
-
-class BulletSystem {
-private:
-        std::vector<glm::vec2> bulletPos;
-        std::vector<glm::vec2> bulletVel;
-        std::vector<unsigned int> bulletDeathTime;
-        GL::Buffer bulletPosBuff;
-
-        std::shared_ptr<GL::Texture2D> img;
-public:
-        void addBullet() {
-                bulletPos.push_back({0, 0});
-                bulletVel.push_back({0, 0});
-                bulletDeathTime.push_back(0);
-        }
-        void update() {
-                for (int i = 0; i < bulletPos.size(); i++) {
-                        bulletPos[i] += bulletVel[i];
-                }
-        }
-};
+#include "BulletSystem.hpp"
 
 class TestGame2Impl {
         std::unique_ptr<Scene> scene;
@@ -60,6 +35,7 @@ public:
 void TestGame2Impl::initAssets() {
         brickGeo = AssetManager::get().getModelBuffer("legobrick.ply");
         shipGeo  = AssetManager::get().getModelBuffer("ship1 v3.ply");
+        // shipGeo  = brickGeo;
 
         auto brickDiffuse = AssetManager::get().getImage("BrickTex.png");
         auto brickNormals = AssetManager::get().getImage("BrickNormals2.png");
@@ -74,8 +50,8 @@ void TestGame2Impl::initScene() {
         const auto gridSize = 10;
         const auto gridSpacing = 2.f;
         for (int i = 0; i < gridSize; i++) { for (int j = 0; j < gridSize; j++) {
-                float x = (i - gridSize/2) * gridSpacing;
-                float z = (j + 1) * gridSpacing;
+                float x = (i - gridSize/2 + 0.5f) * gridSpacing;
+                float z = (j + 1 + 0.5f) * gridSpacing;
                 auto obj = std::make_shared<Object>(glm::translate(glm::vec3(x, -10, z)), brickGeo, brickMat);
                 scene->objects.push_back(std::move(obj));
         }}
@@ -86,6 +62,10 @@ void TestGame2Impl::initScene() {
         sunRotation = 0.0f;
 
         player.objWk = ship;
+
+        scene->bulletSystem = std::make_unique<BulletSystem>();
+        scene->bulletSystem->addBullet({{0,10},{-0.025,-0.05},0});
+        scene->bulletSystem->addBullet({{0,10},{ 0.025,-0.05},0});
 }
 
 void TestGame2Impl::init() {

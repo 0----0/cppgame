@@ -371,6 +371,18 @@ public:
         }
 };
 
+class TextureBuffer : public Texture {
+public:
+        void bind() {
+                ::glBindTexture(GL_TEXTURE_BUFFER, handle);
+        }
+        void assign(GLint internalFormat, const GL::Buffer& buff)
+        {
+                bind();
+                ::glTexBuffer(GL_TEXTURE_BUFFER, internalFormat, buff());
+        }
+};
+
 class Framebuffer;
 
 template<>

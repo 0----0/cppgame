@@ -27,7 +27,8 @@ int main() {
                 {"FORWARD", GLFW_KEY_W},
                 {"LEFT", GLFW_KEY_A},
                 {"BACK", GLFW_KEY_S},
-                {"RIGHT", GLFW_KEY_D}
+                {"RIGHT", GLFW_KEY_D},
+                {"FIRE", GLFW_KEY_X}
         }));
         InputHandler input(renderer.glfwWindow, keymap);
 
