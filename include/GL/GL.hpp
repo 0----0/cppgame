@@ -644,6 +644,18 @@ public:
                 source(string.data(), string.size());
         }
 
+        void source(const std::vector<std::string>& strings) {
+                const GLchar* cstrs[strings.size()];
+                GLint cstrlens[strings.size()];
+
+                for (int i = 0; i < strings.size(); i++) {
+                        cstrs[i] = &strings[i][0];
+                        cstrlens[i] = strings[i].size();
+                }
+
+                source(strings.size(), cstrs, cstrlens);
+        }
+
         void compile() {
                 ::glCompileShader(handle);
                 if (!get<GL_COMPILE_STATUS>()) {

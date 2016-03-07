@@ -52,7 +52,7 @@ void TestGame2Impl::initScene() {
         for (int i = 0; i < gridSize; i++) { for (int j = 0; j < gridSize; j++) {
                 float x = (i - gridSize/2 + 0.5f) * gridSpacing;
                 float z = (j + 1 + 0.5f) * gridSpacing;
-                auto obj = std::make_shared<Object>(glm::translate(glm::vec3(x, -10, z)), brickGeo, brickMat);
+                auto obj = std::make_shared<Object>(glm::translate(glm::vec3(x, -10, z-10)), brickGeo, brickMat);
                 scene->objects.push_back(std::move(obj));
         }}
 
