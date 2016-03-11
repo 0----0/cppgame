@@ -15,7 +15,7 @@
 #include "Object.hpp"
 
 #include "TestGame.hpp"
-#include "TestGame2.hpp"
+#include "TestGame2Wrp.hpp"
 
 int main() {
         glfwInit();
@@ -24,15 +24,15 @@ int main() {
         Renderer renderer;
 
         auto keymap = std::make_shared<Keymap>(Keymap({
-                {"FORWARD", GLFW_KEY_W},
-                {"LEFT", GLFW_KEY_A},
-                {"BACK", GLFW_KEY_S},
-                {"RIGHT", GLFW_KEY_D},
-                {"FIRE", GLFW_KEY_X}
+                {"FORWARD", GLFW_KEY_UP},
+                {"LEFT", GLFW_KEY_LEFT},
+                {"BACK", GLFW_KEY_DOWN},
+                {"RIGHT", GLFW_KEY_RIGHT},
+                {"FIRE", GLFW_KEY_Z}
         }));
         InputHandler input(renderer.glfwWindow, keymap);
 
-        TestGame2 game;
+        TestGame2Wrp game;
         game.init();
 
         while(!renderer.glfwWindow.shouldClose()) {
@@ -41,12 +41,13 @@ int main() {
                 input.update();
                 if (input.getKey(GLFW_KEY_SPACE)) {
                         game = [] {
-                                TestGame2 game;
+                                TestGame2Wrp game;
                                 game.init();
                                 return game;
                         }();
                 }
-                game.update(input);
+                if (!input.getKey(GLFW_KEY_B))
+                        game.update(input);
                 game.render(renderer);
 
                 renderer.glfwWindow.setTitle(std::string{"Hello, World!  FPS:"}.append(std::to_string(1000000.0f/(float)timer.elapsedUS())).append(")"));

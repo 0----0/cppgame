@@ -6,8 +6,9 @@
 #include <glm/glm.hpp>
 
 #include "Object.hpp"
-#include "Scene.hpp"
 #include "misc.hpp"
+
+class Scene;
 
 class ShadowmapRenderer;
 class BulletRenderer;

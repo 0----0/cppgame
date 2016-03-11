@@ -32,7 +32,7 @@ public:
                 bulletProg.uniform<int>("textureID", 0);
                 bulletProg.uniform<int>("bulletList", 5);
 
-                bulletProg.uniform("projection", glm::perspectiveFovRH(3.14159f/2.0f, 1024.0f, 768.0f, 0.01f, 100.0f));
+                bulletProg.uniform("projection", glm::perspectiveFovRH(3.14159f/4.0f, 1024.0f, 768.0f, 0.01f, 128.0f));
 
                 bulletVao.vertexAttribFormat<glm::vec3>(bulletProg.attrib("vertPos"), 0);
                 bulletVao.vertexAttribBinding(bulletProg.attrib("vertPos"), 0);
@@ -45,11 +45,12 @@ public:
 
         void drawBullets(const glm::mat4& cam, unsigned int numBullets,
                          const GL::Buffer& bulletPosList,
-                         const GL::Texture2D& sprite)
+                         const GL::Texture2D& sprite, glm::vec2 scale)
         {
                 glm::mat4 newCam;
                 newCam[3] = cam[3];
                 bulletProg.uniform("camera", cam);
+                bulletProg.uniform("scale", scale);
 
                 glDepthMask(GL_FALSE);
                 glEnable(GL_BLEND);

@@ -1,4 +1,5 @@
 #include "GL/GL.hpp"
+#include "TestGame2Wrp.hpp"
 #include "TestGame2.hpp"
 
 #include "AssetManager.hpp"
@@ -7,32 +8,10 @@
 #include "InputHandler.hpp"
 #include "PlayerController.hpp"
 #include "BulletSystem.hpp"
+#include "EnemyAI.hpp"
+#include "EnemyList.hpp"
 
-class TestGame2Impl {
-        std::unique_ptr<Scene> scene;
-        std::shared_ptr<const GeometryBuffer> brickGeo;
-        std::shared_ptr<const GeometryBuffer> shipGeo;
-
-        std::shared_ptr<Material> brickMat;
-        std::shared_ptr<Material> shipMat;
-
-        std::shared_ptr<Object> ship;
-
-        TopDownPlayerController player;
-
-        float sunRotation;
-public:
-        void init();
-
-        void initAssets();
-        void initScene();
-
-        void update(InputHandler& input);
-
-        void render(Renderer& renderer);
-};
-
-void TestGame2Impl::initAssets() {
+void TestGame2::initAssets() {
         brickGeo = AssetManager::get().getModelBuffer("legobrick.ply");
         shipGeo  = AssetManager::get().getModelBuffer("ship1 v3.ply");
         // shipGeo  = brickGeo;
@@ -43,7 +22,7 @@ void TestGame2Impl::initAssets() {
         shipMat = brickMat;
 }
 
-void TestGame2Impl::initScene() {
+void TestGame2::initScene() {
         scene = std::make_unique<Scene>();
         scene->backgroundColor = glm::vec3(0.5f, 0.15f, 0.25f);
 
@@ -61,19 +40,61 @@ void TestGame2Impl::initScene() {
 
         sunRotation = 0.0f;
 
-        player.objWk = ship;
+        player = std::make_unique<ShipController>();
+        player->objWk = ship;
 
-        scene->bulletSystem = std::make_unique<BulletSystem>();
-        scene->bulletSystem->addBullet({{0,10},{-0.025,-0.05},0});
-        scene->bulletSystem->addBullet({{0,10},{ 0.025,-0.05},0});
+        auto img = AssetManager::get().getImage("bullet2.png");
+        auto bulletSystem = std::make_unique<BulletSystem>(
+                std::move(img), glm::vec2{0.25f, 4.0f}
+        );
+        scene->bulletSystems.emplace_back(std::move(bulletSystem));
+
+        auto img2 = AssetManager::get().getImage("bullet1.png");
+        auto bulletSystem2 = std::make_unique<BulletSystem>(
+                std::move(img2), glm::vec2{1.0f, 1.0f}
+        );
+        scene->bulletSystems.emplace_back(std::move(bulletSystem2));
+
+        enemies = std::make_unique<EnemyList>();
+        enemies->game = this;
 }
 
-void TestGame2Impl::init() {
+void TestGame2::init() {
         initAssets();
         initScene();
 }
 
-void TestGame2Impl::update(InputHandler& input) {
+void TestGame2::updateLevel() {
+        if (scene->ticks == 0) {
+                Enemy enemy {
+                        .position = {32.f, 16.f},
+                        .bounds = {{-1.0f, -1.0f}, {1.0f, 1.0f}},
+                        .ai = std::make_shared<EnemyAI>()
+                };
+                enemy.ai->spawn(*this);
+                enemies->addEnemy(std::move(enemy));
+        } else if (scene->ticks == 60) {
+                Enemy enemy {
+                        .position = {32.f, 8.f},
+                        .bounds = {{-1.0f, -1.0f}, {1.0f, 1.0f}},
+                        .ai = std::make_shared<EnemyAI>()
+                };
+                enemy.ai->spawn(*this);
+                enemies->addEnemy(std::move(enemy));
+        } else if (scene->ticks == 120) {
+                Enemy enemy {
+                        .position = {32.f, 0.f},
+                        .bounds = {{-1.0f, -1.0f}, {1.0f, 1.0f}},
+                        .ai = std::make_shared<EnemyAI>()
+                };
+                enemy.ai->spawn(*this);
+                enemies->addEnemy(std::move(enemy));
+        }
+
+}
+
+void TestGame2::update(InputHandler& input) {
+        updateLevel();
         scene->update();
 
         scene->sunDirection = glm::vec3(glm::rotate(sunRotation,glm::vec3{0,1,0})*glm::vec4(glm::normalize(glm::vec3{-1,-1,-1}),1));
@@ -81,18 +102,34 @@ void TestGame2Impl::update(InputHandler& input) {
                 sunRotation += 0.01f;
         }
 
-        player.update(input);
+        player->update(input, *scene);
+
+        auto playerBounds = AABB{{-0.5f, -0.5f}, {0.5f, 0.5f}};
+        playerBounds = playerBounds + player->getPosition();
+        auto& bullets = *scene->bulletSystems[1];
+        auto& bounds = bullets.bounds;
+        for (auto& p : bullets.bulletPos) {
+                if (playerBounds.intersects(bounds + p)) {
+                        init();
+                        update(input);
+                        return;
+                }
+        }
+
+        enemies->update(*this);
+        enemies->testCollisions(*scene->bulletSystems[0]);
 }
 
-void TestGame2Impl::render(Renderer& renderer) {
-        renderer.drawScene(player.getMatrix(), *scene);
+void TestGame2::render(Renderer& renderer) {
+        renderer.drawScene(player->getMatrix(), *scene);
 }
 
-TestGame2::TestGame2(): impl( std::make_unique<TestGame2Impl>() ) {}
-TestGame2::TestGame2(TestGame2&& rhs) = default;
-TestGame2& TestGame2::operator=(TestGame2&& rhs) = default;
-TestGame2::~TestGame2() = default;
+TestGame2Wrp::TestGame2Wrp(): impl ( std::make_unique<TestGame2>() ) {}
+TestGame2Wrp::TestGame2Wrp(TestGame2Wrp&& rhs) = default;
+TestGame2Wrp& TestGame2Wrp::operator=(TestGame2Wrp&& rhs) = default;
+TestGame2Wrp::~TestGame2Wrp() = default;
 
-void TestGame2::init() { impl->init(); }
-void TestGame2::update(InputHandler& input) { impl->update(input); }
-void TestGame2::render(Renderer& renderer) { impl->render(renderer); }
+void TestGame2Wrp::init() { impl->init(); }
+void TestGame2Wrp::update(InputHandler& input) { impl->update(input); }
+void TestGame2Wrp::render(Renderer& renderer) { impl->render(renderer); }
+Scene& TestGame2Wrp::getScene() { return *impl->scene; }

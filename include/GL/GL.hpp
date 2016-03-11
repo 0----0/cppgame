@@ -8,6 +8,8 @@
 
 #include <array>
 
+using uint = unsigned int;
+
 namespace GL {
 
 namespace detail {
@@ -187,10 +189,11 @@ struct uniform_info;
 #define GL_UNIFORM_INFO_UNWRAP(TYPE, FUNC, MATRIX) \
         template<> \
         struct uniform_info<TYPE> : uniform_info_base<TYPE> { \
-                static constexpr auto func = &FUNC; \
+                static constexpr auto getFunc() { \
+                        return &FUNC; \
+                } \
                 static constexpr bool isMatrix = MATRIX; \
         }; \
-
 ;
 
 GL_UNIFORM_INFO(GL_UNIFORM_INFO_UNWRAP)
@@ -571,7 +574,7 @@ public:
         void> uniform(const char* name, const T& data) {
                 using uniform_info = detail::uniform_info<T>;
                 use();
-                (*uniform_info::func)(getUniformLocation(name), 1, uniform_info::value_ptr(data));
+                (*uniform_info::getFunc())(getUniformLocation(name), 1, uniform_info::value_ptr(data));
         }
 
         template<typename T>
@@ -579,14 +582,14 @@ public:
         void> uniform(const char* name, const T& data) {
                 using uniform_info = detail::uniform_info<T>;
                 use();
-                (*uniform_info::func)(getUniformLocation(name), 1, GL_FALSE, &data[0][0]);
+                (*uniform_info::getFunc())(getUniformLocation(name), 1, GL_FALSE, &data[0][0]);
         }
 
         template<typename T, std::size_t N>
         void uniform(const char* name, const T (&data)[N]) {
                 using uniform_info = detail::uniform_info<T>;
                 use();
-                (*uniform_info::func)(getUniformLocation(name), N, uniform_info::value_ptr(data));
+                (*uniform_info::getFunc())(getUniformLocation(name), N, uniform_info::value_ptr(data));
         }
 };
 

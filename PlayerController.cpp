@@ -1,10 +1,15 @@
 #include "PlayerController.hpp"
 
+#include "Scene.hpp"
 #include "Object.hpp"
 #include "InputHandler.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
+
+#ifndef M_PI
+#define M_PI 3.14159265359
+#endif
 
 glm::mat4 getLockedCamera(glm::vec3 offset, const Object& obj) {
         auto view = glm::inverse(obj.objTransform);
@@ -73,4 +78,33 @@ glm::mat4 TopDownPlayerController::getMatrix() {
         auto obj = objWk.lock();
 
         return getFixedTopDownCamera(position, *obj);
+}
+
+void ShipController::update(InputHandler& input, Scene& scene) {
+        if (objWk.expired()) return;
+        auto obj = objWk.lock();
+        TopDownPlayerController::update(input);
+
+        if (input.getTrigger("FIRE") && scene.ticks - lastFire > 2) {
+                lastFire = scene.ticks;
+                auto objPos = glm::vec3(obj->getTransform() * glm::vec4(0, 0, 0, 1));
+                auto objPos2d = glm::vec2(objPos.x, objPos.z);
+                auto firePoint1 = objPos2d + glm::vec2{ 3.6, 3};
+                auto firePoint2 = objPos2d + glm::vec2{-3.6, 3};
+                auto firePoint3 = objPos2d + glm::vec2{ 1.9, 3.2};
+                auto firePoint4 = objPos2d + glm::vec2{-1.9, 3.2};
+                auto velocity = glm::vec2{0, 1.5};
+                scene.bulletSystems[0]->addBullet({firePoint1, velocity, 0});
+                scene.bulletSystems[0]->addBullet({firePoint2, velocity, 0});
+                scene.bulletSystems[0]->addBullet({firePoint3, velocity, 0});
+                scene.bulletSystems[0]->addBullet({firePoint4, velocity, 0});
+        }
+}
+
+glm::vec2 ShipController::getPosition() const {
+        if (objWk.expired()) return {};
+        auto obj = objWk.lock();
+
+        glm::vec3 objPos(obj->objTransform * glm::vec4{0,0,0,1});
+        return {objPos.x, objPos.z};
 }

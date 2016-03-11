@@ -20,6 +20,6 @@ find_package(OpenGL REQUIRED)
 LIST(APPEND LIB ${OPENGL_LIBRARIES})
 
 include_directories(INC)
-add_executable(cppgame main.cpp AssetManager.cpp TestGame.cpp TestGame2.cpp
-PlayerController.cpp Renderer.cpp)
+add_executable(cppgame main.cpp AssetManager.cpp TestGame2.cpp
+PlayerController.cpp Renderer.cpp EnemyAI.cpp EnemyList.cpp)
 target_link_libraries(cppgame ${LIB})

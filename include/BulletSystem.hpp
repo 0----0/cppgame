@@ -2,6 +2,7 @@
 
 #include "GL/GL.hpp"
 #include "AssetManager.hpp"
+#include "AxisAlignedBoundingBox.hpp"
 
 #include <glm/glm.hpp>
 
@@ -15,15 +16,23 @@ struct Bullet {
 
 class BulletSystem {
 private:
-        std::vector<glm::vec2> bulletPos;
         std::vector<glm::vec2> bulletVel;
         std::vector<unsigned int> bulletDeathTime;
         GL::Buffer bulletPosBuff;
+        glm::vec2 scale{1.0f, 1.0f};
 
 public:
+        std::vector<glm::vec2> bulletPos;
+        AABB bounds{scale/-2.0f, scale/2.0f};
+
         std::shared_ptr<const GL::Texture2D> img {
-                AssetManager::get().getImage("bullet1.png")
+                AssetManager::get().getImage("bullet2.png")
         };
+
+        BulletSystem(std::shared_ptr<const GL::Texture2D> img, glm::vec2 scale):
+                scale( scale ),
+                img( std::move(img) )
+        {}
 
 
         void addBullet(const Bullet& bullet) {
@@ -44,7 +53,11 @@ public:
         unsigned int numBullets() const {
                 return bulletPos.size();
         }
-        const GL::Buffer& getBuffer() {
+        const GL::Buffer& getBuffer() const {
                 return bulletPosBuff;
+        }
+
+        glm::vec2 getScale() const {
+                return scale;
         }
 };

@@ -1,26 +1,52 @@
-#pragma once
-
+#include <vector>
 #include <memory>
 
-class GeometryBuffer;
 class Scene;
+class GeometryBuffer;
 class Material;
+class Object;
+class ShipController;
+class EnemyAI;
+class BulletSystem;
+class TestGame2Wrp;
 class InputHandler;
 class Renderer;
-class Object;
-
-class TestGame2Impl;
+class EnemyList;
 
 class TestGame2 {
-private:
-        std::unique_ptr<TestGame2Impl> impl;
+        std::unique_ptr<Scene> scene;
+        std::shared_ptr<const GeometryBuffer> brickGeo;
+        std::shared_ptr<const GeometryBuffer> shipGeo;
+
+        std::shared_ptr<Material> brickMat;
+        std::shared_ptr<Material> shipMat;
+
+        std::shared_ptr<Object> ship;
+
+        std::vector<std::unique_ptr<EnemyAI>> enemyAIs;
+        std::unique_ptr<EnemyList> enemies;
+
+        std::shared_ptr<BulletSystem> playerBulletSystem;
+        std::shared_ptr<BulletSystem> enemyBulletSystem;
+
+        float sunRotation;
+
+        void updateLevel();
+
+        friend class TestGame2Wrp;
 public:
-        TestGame2();
-        TestGame2(TestGame2&& rhs);
-        TestGame2& operator=(TestGame2&& rhs);
-        ~TestGame2();
+        std::unique_ptr<ShipController> player;
 
         void init();
+
+        void initAssets();
+        void initScene();
+
         void update(InputHandler& input);
+
         void render(Renderer& renderer);
+        Scene& getScene() {
+                return *scene;
+        }
+
 };
