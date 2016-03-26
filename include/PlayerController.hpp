@@ -15,7 +15,7 @@ public:
 class TopDownPlayerController {
 public:
         std::weak_ptr<Object> objWk;
-        glm::vec3 position{0, 48, 0};
+        glm::vec3 position{0, 24, 0};
 
         void update(InputHandler& input);
         glm::mat4 getMatrix();

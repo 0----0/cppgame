@@ -9,6 +9,10 @@ uniform sampler2DArray shadowmapArrayID;
 uniform int numShadowLevels;
 uniform mat4 shadowTransform;
 
+uniform vec3 sceneSpecular;
+uniform vec3 sceneDiffuse;
+uniform vec3 sceneAmbient;
+
 in vec3 fragNormal;
 in vec2 fragTex;
 in vec3 fragTangent;
@@ -139,13 +143,20 @@ void main() {
 
         vec3 normMap = normalize(texture(normMapID, _fragTex).xyz*2.0f - 1.0f);
 
-        vec3 realNorm = normalize(normMap.x * normalize(fragTangent) + normMap.y * normalize(fragBitangent) + normMap.z * normalize(fragNormal));
+        // vec3 realNorm = normalize(normMap.x * normalize(fragTangent) + normMap.y * normalize(fragBitangent) + normMap.z * normalize(fragNormal));
+        vec3 genBitangent = fragBitangent.x * cross(fragNormal, fragTangent);
+        vec3 realNorm = normalize(normMap.x * fragTangent + normMap.y * genBitangent + normMap.z * fragNormal);
+        // fragColor = vec4(fragBitangent, 1.0f);
+        // return;
         // vec3 realNorm = normalize(fragNormal);
 
-        vec3 diffuseColor = texture(textureID, _fragTex).rgb;
+        vec3 baseColor = texture(textureID, _fragTex).rgb;
+        vec3 diffuseColor = baseColor * sceneDiffuse;
         // vec3 diffuseColor = vec3(1, 0, 0);
-        vec3 ambientColor = vec3(0.05, 0.1, 0.2);
-        vec3 specularColor = vec3(0.6, 0.5, 0.3);
+        // vec3 ambientColor = vec3(0.05, 0.1, 0.2);
+        vec3 ambientColor = baseColor * sceneAmbient;
+        // vec3 specularColor = vec3(0.6, 0.5, 0.3);
+        vec3 specularColor = sceneSpecular;
         float shininess = 64.0f;
 
         vec3 ambient = ambientColor;

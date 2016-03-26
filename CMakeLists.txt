@@ -21,5 +21,6 @@ LIST(APPEND LIB ${OPENGL_LIBRARIES})
 
 include_directories(INC)
 add_executable(cppgame main.cpp AssetManager.cpp TestGame2.cpp
-PlayerController.cpp Renderer.cpp EnemyAI.cpp EnemyList.cpp)
+PlayerController.cpp Renderer.cpp EnemyAI.cpp EnemyList.cpp Geometry.cpp
+UnindexedGeometry.cpp extern/mikktspace.c)
 target_link_libraries(cppgame ${LIB})

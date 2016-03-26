@@ -283,13 +283,13 @@ public:
                 ::glBufferData(GL_ARRAY_BUFFER, num*sizeof(T), data, usage);
         }
 
-        template<typename T>
-        void assign(const std::vector<T>& data, GLenum usage) {
-                assign(data.size() * sizeof(T), &data[0], usage);
+        template<typename T, typename A>
+        void assign(const std::vector<T, A>& data, GLenum usage) {
+                assign(data.size(), &data[0], usage);
         }
 
-        template<typename T>
-        Buffer(const std::vector<T>& data, GLenum usage): Buffer() {
+        template<typename T, typename A>
+        Buffer(const std::vector<T, A>& data, GLenum usage): Buffer() {
                 assign(data, usage);
         }
 };

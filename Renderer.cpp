@@ -29,12 +29,19 @@ void Renderer::drawScene(const glm::mat4& camera, const Scene& scene) {
         renderProgram.uniform<int>("numShadowLevels", shadowmaps.numShadowmaps());
 
         GL::Framebuffer::unbind();
-        const glm::vec3& bg = scene.backgroundColor;
-        glClearColor(bg.r, bg.g, bg.b, 1.0f);
+
         auto windowSize = glfwWindow.getSize();
         glViewport(0, 0, windowSize.x, windowSize.y);
+
         renderProgram.uniform("projection", glm::perspectiveFovRH(3.14159f/4.0f, windowSize.x, windowSize.y, 0.01f, 128.0f));
+
+        const glm::vec3& bg = scene.backgroundColor;
+        glClearColor(bg.r, bg.g, bg.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        renderProgram.uniform("sceneAmbient", scene.sceneAmbient);
+        renderProgram.uniform("sceneDiffuse", scene.sceneDiffuse);
+        renderProgram.uniform("sceneSpecular", scene.sceneSpecular);
 
         for (auto& obj : scene.objects) {
                 drawObject(*obj);

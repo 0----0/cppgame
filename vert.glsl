@@ -22,6 +22,6 @@ void main() {
         gl_Position = projection * camera * world;
         fragNormal = normalize((obj * vec4(vertNormal, 0)).xyz);
         fragTex = vertTex;
-        fragTangent = vertTangent;
+        fragTangent = normalize(vertTangent);
         fragBitangent = vertBitangent;
 }

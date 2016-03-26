@@ -17,6 +17,23 @@
 #include "TestGame.hpp"
 #include "TestGame2Wrp.hpp"
 
+// class GUIObject {
+//
+// };
+//
+// class GameWrapper {
+//         static std::shared_ptr<Keymap> keymap;
+//
+//         TestGame2Wrp game;
+//         InputHandler input;
+//
+//         GameWrapper(Renderer& renderer):
+//                 input(renderer.glfwWindow, keymap)
+//         {
+//
+//         }
+// };
+
 int main() {
         glfwInit();
         scope_exit([&] { glfwTerminate(); });
@@ -49,7 +66,7 @@ int main() {
                 if (!input.getKey(GLFW_KEY_B))
                         game.update(input);
                 game.render(renderer);
-
+                glFinish();
                 renderer.glfwWindow.setTitle(std::string{"Hello, World!  FPS:"}.append(std::to_string(1000000.0f/(float)timer.elapsedUS())).append(")"));
 
                 timer.roundTo(std::chrono::microseconds(16666));
