@@ -13,13 +13,13 @@
 
 void TestGame2::initAssets() {
         brickGeo = AssetManager::get().getModelBuffer("legobrick.ply");
-        shipGeo  = AssetManager::get().getModelBuffer("ship1 v7.ply");
+        shipGeo  = AssetManager::get().getModelBuffer("ship1 v9.ply");
 
         auto brickDiffuse = AssetManager::get().getImage("BrickTex.png");
         auto brickNormals = AssetManager::get().getImage("BrickNormals2.png");
         brickMat = std::make_shared<Material>(brickDiffuse, brickNormals);
-        auto shipDiffuse = AssetManager::get().getImage("ship1 diffuse2.png");
-        auto shipNormals = AssetManager::get().getImage("ship1 normals.png");
+        auto shipDiffuse = AssetManager::get().getImage("ship diffuse AO.png");
+        auto shipNormals = AssetManager::get().getImage("ship normalsdf.png");
         shipMat = std::make_shared<Material>(shipDiffuse, shipNormals);
 }
 
