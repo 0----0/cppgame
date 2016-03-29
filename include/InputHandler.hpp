@@ -75,13 +75,13 @@ public:
                 if (mouseFree) mouseMovement = {0,0};
 
                 glm::vec2 keyboardRotation;
-                if (window.getKey(GLFW_KEY_LEFT)) {
+                if (getTrigger("LOOK LEFT")) {
                         keyboardRotation.x -= 1.0f;
-                } if (window.getKey(GLFW_KEY_RIGHT)) {
+                } if (getTrigger("LOOK RIGHT")) {
                         keyboardRotation.x += 1.0f;
-                } if (window.getKey(GLFW_KEY_UP)) {
+                } if (getTrigger("LOOK UP")) {
                         keyboardRotation.y -= 1.0f;
-                } if (window.getKey(GLFW_KEY_DOWN)) {
+                } if (getTrigger("LOOK DOWN")) {
                         keyboardRotation.y += 1.0f;
                 }
 

@@ -18,17 +18,28 @@ void TestGame2::initAssets() {
         auto brickDiffuse = AssetManager::get().getImage("BrickTex.png");
         auto brickNormals = AssetManager::get().getImage("BrickNormals2.png");
         brickMat = std::make_shared<Material>(brickDiffuse, brickNormals);
-        auto shipDiffuse = AssetManager::get().getImage("ship diffuse AO.png");
+        auto shipDiffuse = AssetManager::get().getImage("ship1 diffuse AO2.png");
         auto shipNormals = AssetManager::get().getImage("ship normalsdf.png");
         shipMat = std::make_shared<Material>(shipDiffuse, shipNormals);
 }
 
+glm::vec3 parseVec3(int intForm) {
+        int r = (intForm >> 16) & 0xFF;
+        int g = (intForm >> 8)  & 0xFF;
+        int b = intForm & 0xFF;
+        return {r/255.0f, g/255.0f, b/255.0f};
+}
+
 void TestGame2::initScene() {
         scene = std::make_unique<Scene>();
-        scene->backgroundColor = glm::vec3(0.5f, 0.15f, 0.25f);
-        scene->sceneAmbient = glm::vec3(0.05, 0.1, 0.2);
+        // scene->backgroundColor = glm::vec3(0.5f, 0.15f, 0.25f);
+        scene->backgroundColor = parseVec3(0x06070A);
+        // scene->sceneAmbient = glm::vec3(0.05, 0.1, 0.2);
+        scene->sceneAmbient = parseVec3(0x172B38);
         scene->sceneSpecular = glm::vec3(0.6, 0.5, 0.2f);
-        scene->sceneDiffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+        // scene->sceneSpecular = parseVec3(0xFFFDEB)*0.5f;
+        // scene->sceneDiffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+        scene->sceneDiffuse = parseVec3(0x9EC2FF);
         // scene->backgroundColor = glm::vec3(0.0f, 0.1f, 0.25f);
 
         const auto gridSize = 10;

@@ -17,6 +17,12 @@ static std::string expandTexturePath(const std::string& name) {
         return path;
 }
 
+static std::string expandScriptPath(const std::string& name) {
+        std::string path = "../assets/scripts/";
+        path.append(name);
+        return path;
+}
+
 static GL::Texture2D textureFromImage(const std::string& filename) {
         int w, h, n;
         unsigned char* data = stbi_load(filename.c_str(), &w, &h, &n, 0);
@@ -101,4 +107,31 @@ AssetManager::getModelBuffer(const std::string& name) {
         modelBuffers[name] = img;
 
         return img;
+}
+
+static std::string readFile(const char* filename) {
+        std::string string;
+        std::ifstream file(filename);
+        file.seekg(0, std::ios::end);
+        string.resize(file.tellg());
+        file.seekg(0, std::ios::beg);
+        file.read(&string[0], string.size());
+        file.close();
+        return string;
+}
+
+std::shared_ptr<const std::string>
+AssetManager::getScript(const std::string& name) {
+        auto iter = scripts.find(name);
+
+        if (iter != scripts.end()) {
+                if (!iter->second.expired()) {
+                        return iter->second.lock();
+                }
+        }
+
+        auto script = std::make_shared<std::string>(readFile(expandScriptPath(name).data()));
+        scripts[name] = script;
+
+        return script;
 }

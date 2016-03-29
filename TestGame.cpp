@@ -4,6 +4,7 @@
 #include "GeometryBuffer.hpp"
 #include "Renderer.hpp"
 #include "Camera.hpp"
+#include "Scene.hpp"
 
 class TestGameImpl {
         std::unique_ptr<Scene> scene;
@@ -30,17 +31,22 @@ public:
 
 void TestGameImpl::initAssets() {
         brickGeo = AssetManager::get().getModelBuffer("legobrick.ply");
-        shipGeo  = AssetManager::get().getModelBuffer("ship1 v3.ply");
+        shipGeo  = AssetManager::get().getModelBuffer("ship1 v9.ply");
 
         auto brickDiffuse = AssetManager::get().getImage("BrickTex.png");
-        auto brickNormals = AssetManager::get().getImage("BrickNormals2.png");
+        auto brickNormals = AssetManager::get().getImage("DefaultNormals.png");
         brickMat = std::make_shared<Material>(brickDiffuse, brickNormals);
-        shipMat = brickMat;
+        auto shipDiffuse = AssetManager::get().getImage("ship diffuse AO.png");
+        auto shipNormals = AssetManager::get().getImage("ship normalsdf.png");
+        shipMat = std::make_shared<Material>(shipDiffuse, shipNormals);
 }
 
 void TestGameImpl::initScene() {
         scene = std::make_unique<Scene>();
         scene->backgroundColor = glm::vec3(0.5f, 0.15f, 0.25f);
+        scene->sceneDiffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+        scene->sceneAmbient = glm::vec3(0.05, 0.1, 0.2);
+        scene->sceneSpecular = glm::vec3(0.6, 0.5, 0.2f);
 
         const auto gridSize = 10;
         const auto gridSpacing = 2.f;
