@@ -3,6 +3,7 @@
 #include <luajit-2.0/lua.hpp>
 #include <string>
 #include <functional>
+#include <memory>
 
 // struct lua_State;
 template<typename T>
@@ -74,14 +75,14 @@ struct callFn2 {
         std::enable_if_t<currArg != std::tuple_size<argtuple>::value, R>
         f(std::function<R(Args...)>* fn, lua_State* L, int startIdx, ArgsSoFar... args) {
                 using currArgType = std::tuple_element_t<currArg, argtuple>;
-                return callFn2::template f<currArg + 1>(fn, L, startIdx, std::forward(args)..., loadLuaValue<currArgType>(L, startIdx + currArg));
+                return callFn2::template f<currArg + 1>(fn, L, startIdx, std::forward<ArgsSoFar>(args)..., loadLuaValue<currArgType>(L, startIdx + currArg));
         }
 
         template<int currArg, typename... ArgsSoFar>
         static
         std::enable_if_t<currArg == std::tuple_size<argtuple>::value, R>
         f(std::function<R(Args...)>* fn, lua_State* L, int startIdx, ArgsSoFar... args) {
-                return fn->operator()(std::forward<Args...>(args...));
+                return fn->operator()(std::forward<Args>(args)...);
         }
 };
 
@@ -103,9 +104,12 @@ int> callFn(lua_State* L) {
         return 1;
 }
 
+class FSWatcher;
+
 class LuaInterface {
 private:
         lua_State *L;
+        std::unique_ptr<FSWatcher> fsWatch;
 
         template<typename T>
         void pushObject(T&& obj) {

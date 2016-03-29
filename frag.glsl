@@ -10,6 +10,7 @@ uniform int numShadowLevels;
 uniform mat4 shadowTransform;
 
 uniform vec3 sceneSpecular;
+uniform float shininess = 64.0f;
 uniform vec3 sceneDiffuse;
 uniform vec3 sceneAmbient;
 
@@ -157,7 +158,6 @@ void main() {
         vec3 ambientColor = baseColor * sceneAmbient;
         // vec3 specularColor = vec3(0.6, 0.5, 0.3);
         vec3 specularColor = sceneSpecular;
-        float shininess = 64.0f;
 
         vec3 ambient = ambientColor;
 

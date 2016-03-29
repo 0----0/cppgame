@@ -4,6 +4,10 @@
 
 #include <iostream>
 
+class FSWatcher {
+
+};
+
 LuaInterface::LuaInterface()
 {
         L = lua_open();
@@ -24,6 +28,7 @@ void LuaInterface::loadFile(const std::string& filename) {
         if (error) {
                 std::cerr << lua_tostring(L, -1);
                 lua_pop(L, 1);
+                return;
         }
         error = lua_pcall(L, 0, 0, 0);
         if (error) {

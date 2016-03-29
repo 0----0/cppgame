@@ -10,6 +10,7 @@
 #include "BulletSystem.hpp"
 #include "EnemyAI.hpp"
 #include "EnemyList.hpp"
+#include "LuaInterface.hpp"
 
 void TestGame2::initAssets() {
         brickGeo = AssetManager::get().getModelBuffer("legobrick.ply");
@@ -31,6 +32,7 @@ glm::vec3 parseVec3(int intForm) {
 }
 
 void TestGame2::initScene() {
+        lua = std::make_unique<LuaInterface>();
         scene = std::make_unique<Scene>();
         // scene->backgroundColor = glm::vec3(0.5f, 0.15f, 0.25f);
         scene->backgroundColor = parseVec3(0x06070A);
@@ -75,9 +77,34 @@ void TestGame2::initScene() {
         enemies->game = this;
 }
 
+void TestGame2::initLua() {
+        lua->addGlobalFn("setSceneAmbient", std::function<void(float, float, float)>(
+        [&](float r, float g, float b) {
+                scene->sceneAmbient = glm::vec3(r, g, b);
+        }));
+
+        lua->addGlobalFn("setSceneSpecular", std::function<void(float, float, float)>(
+        [&](float r, float g, float b) {
+                scene->sceneSpecular = glm::vec3(r, g, b);
+        }));
+
+        lua->addGlobalFn("setSceneDiffuse", std::function<void(float, float, float)>(
+        [&](float r, float g, float b) {
+                scene->sceneDiffuse = glm::vec3(r, g, b);
+        }));
+
+        lua->addGlobalFn("setShipShininess", std::function<void(float)>(
+        [&](float s) {
+                shipMat->shininess = s;
+        }));
+
+        lua->loadFile("scene.lua");
+}
+
 void TestGame2::init() {
         initAssets();
         initScene();
+        initLua();
 }
 
 void TestGame2::updateLevel() {

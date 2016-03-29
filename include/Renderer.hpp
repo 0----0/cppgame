@@ -88,6 +88,7 @@ public:
 
         void drawObject(const Object& obj) {
                 renderProgram.uniform("obj", obj.objTransform);
+                renderProgram.uniform("shininess", obj.material->shininess);
                 obj.material->bind();
                 obj.geometry->bind(vao);
                 obj.geometry->draw();

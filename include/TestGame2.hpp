@@ -12,9 +12,11 @@ class TestGame2Wrp;
 class InputHandler;
 class Renderer;
 class EnemyList;
+class LuaInterface;
 
 class TestGame2 {
         std::unique_ptr<Scene> scene;
+        std::unique_ptr<LuaInterface> lua;
         std::shared_ptr<const GeometryBuffer> brickGeo;
         std::shared_ptr<const GeometryBuffer> shipGeo;
 
@@ -41,6 +43,7 @@ public:
 
         void initAssets();
         void initScene();
+        void initLua();
 
         void update(InputHandler& input);
 
