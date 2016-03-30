@@ -22,6 +22,7 @@ LIST(APPEND LIB ${OPENGL_LIBRARIES})
 # find_package(Lua 5.1 REQUIRED)
 # LIST(APPEND LIB ${LUA_LIBRARIES})
 LIST(APPEND LIB "luajit-5.1")
+# LIST(APPEND LIB "lua")
 
 include_directories(INC)
 add_executable(cppgame main.cpp AssetManager.cpp TestGame2.cpp

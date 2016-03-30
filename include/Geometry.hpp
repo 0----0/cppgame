@@ -10,6 +10,8 @@
 
 class UnindexedGeometry;
 
+using uint = unsigned int;
+
 class Geometry {
 private:
         using index_type = uint;

@@ -6,6 +6,8 @@
 
 class Geometry;
 
+using uint = unsigned int;
+
 class UnindexedGeometry {
 private:
         using index_type = uint;

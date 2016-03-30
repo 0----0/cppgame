@@ -10,7 +10,7 @@ class FSWatcher {
 
 LuaInterface::LuaInterface()
 {
-        L = lua_open();
+        L = luaL_newstate();
         luaL_openlibs(L);
 }
 
