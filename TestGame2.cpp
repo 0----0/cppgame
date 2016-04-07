@@ -78,25 +78,21 @@ void TestGame2::initScene() {
 }
 
 void TestGame2::initLua() {
-        lua->addGlobalFn("setSceneAmbient", std::function<void(float, float, float)>(
-        [&](float r, float g, float b) {
+        lua->addGlobalFn("setSceneAmbient", [&](float r, float g, float b) {
                 scene->sceneAmbient = glm::vec3(r, g, b);
-        }));
+        });
 
-        lua->addGlobalFn("setSceneSpecular", std::function<void(float, float, float)>(
-        [&](float r, float g, float b) {
+        lua->addGlobalFn("setSceneSpecular", [&](float r, float g, float b) {
                 scene->sceneSpecular = glm::vec3(r, g, b);
-        }));
+        });
 
-        lua->addGlobalFn("setSceneDiffuse", std::function<void(float, float, float)>(
-        [&](float r, float g, float b) {
+        lua->addGlobalFn("setSceneDiffuse", [&](float r, float g, float b) {
                 scene->sceneDiffuse = glm::vec3(r, g, b);
-        }));
+        });
 
-        lua->addGlobalFn("setShipShininess", std::function<void(float)>(
-        [&](float s) {
+        lua->addGlobalFn("setShipShininess", [&](float s) {
                 shipMat->shininess = s;
-        }));
+        });
 
         lua->loadFile("scene.lua");
 }

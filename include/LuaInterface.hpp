@@ -159,8 +159,8 @@ public:
         void loadFile(const std::string& filename);
 
         template<typename F>
-        void addGlobalFn(const char* name, std::function<F> fn) {
-                pushClosure(std::move(fn));
+        void addGlobalFn(const char* name, F&& fn) {
+                pushClosure(std::forward<F>(fn));
                 lua_setglobal(L, name);
         }
 
