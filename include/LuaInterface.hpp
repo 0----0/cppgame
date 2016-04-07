@@ -49,60 +49,87 @@ inline void pushLuaValue(lua_State* L, float val) {
         lua_pushnumber(L, val);
 }
 
-template<typename... Args>
-struct loadArgs;
+namespace detail {
 
-template<typename Arg>
-struct loadArgs<Arg> {
-        static std::tuple<Arg> f(lua_State* L, int start) {
-                return std::make_tuple(loadLuaValue<Arg>(L, start));
-        }
-};
+template<typename ObjT, typename MType, MType M>
+struct method_info;
 
-template<typename Arg, typename... Args>
-struct loadArgs<Arg, Args...> {
-        static std::tuple<Arg, Args...> f(lua_State* L, int start) {
-                return std::tuple_cat(std::make_tuple(loadLuaValue<Arg>(L, start), loadArgs<Args...>::f(L, start+1)));
-        }
-};
-
-template<typename R, typename... Args>
-struct callFn2 {
+template<typename ObjT, typename R, typename... Args, R (ObjT::*M)(Args...)>
+struct method_info<ObjT, R (ObjT::*)(Args...), M> {
+        using return_type = R;
         using argtuple = std::tuple<Args...>;
 
-        template<int currArg, typename... ArgsSoFar>
-        static
-        std::enable_if_t<currArg != std::tuple_size<argtuple>::value, R>
-        f(std::function<R(Args...)>* fn, lua_State* L, int startIdx, ArgsSoFar... args) {
-                using currArgType = std::tuple_element_t<currArg, argtuple>;
-                return callFn2::template f<currArg + 1>(fn, L, startIdx, std::forward<ArgsSoFar>(args)..., loadLuaValue<currArgType>(L, startIdx + currArg));
+        static R callMethod(ObjT& obj, Args... args) {
+                return (obj.*M)(std::forward<Args>(args)...);
         }
 
-        template<int currArg, typename... ArgsSoFar>
+        template<int startIdx, int currArg, typename... ArgsSoFar>
         static
-        std::enable_if_t<currArg == std::tuple_size<argtuple>::value, R>
-        f(std::function<R(Args...)>* fn, lua_State* L, int startIdx, ArgsSoFar... args) {
-                return fn->operator()(std::forward<Args>(args)...);
+        std::enable_if_t<currArg != std::tuple_size<argtuple>::value,
+        R> accumulateArgsLua(ObjT& obj, lua_State* L, ArgsSoFar... args) {
+                using currArgT = std::tuple_element_t<currArg, argtuple>;
+                return method_info::template accumulateArgsLua<startIdx, currArg + 1>(
+                        obj, L, std::forward<ArgsSoFar>(args)...,
+                        loadLuaValue<currArgT>(L, startIdx + currArg)
+                );
+        }
+
+        template<int startIdx, int currArg, typename... ArgsSoFar>
+        static
+        std::enable_if_t<currArg == std::tuple_size<argtuple>::value,
+        R> accumulateArgsLua(ObjT& obj, lua_State* L, ArgsSoFar... args) {
+                using currArgT = std::tuple_element_t<currArg, argtuple>;
+                return callMethod(obj, std::forward<Args>(args)...);
         }
 };
 
-template<typename R, typename... Args>
-std::enable_if_t<std::is_same<R, void>::value,
-int> callFn(lua_State* L) {
-        using fntype = std::function<R(Args...)>;
-        fntype* obj = static_cast<fntype*>(lua_touserdata(L, lua_upvalueindex(1)));
-        callFn2<R, Args...>::template f<0>(obj, L, 1);
+template<typename ObjT, typename R, typename... Args, R (ObjT::*M)(Args...) const>
+struct method_info<ObjT, R (ObjT::*)(Args...) const, M> {
+        using return_type = R;
+        using argtuple = std::tuple<Args...>;
+
+        static R callMethod(const ObjT& obj, Args... args) {
+                (obj.*M)(std::forward<Args>(args)...);
+        }
+
+        template<int startIdx, int currArg, typename... ArgsSoFar>
+        static
+        std::enable_if_t<currArg != std::tuple_size<argtuple>::value,
+        R> accumulateArgsLua(const ObjT& obj, lua_State* L, ArgsSoFar... args) {
+                using currArgT = std::tuple_element_t<currArg, argtuple>;
+                return method_info::template accumulateArgsLua<startIdx, currArg + 1>(
+                        obj, L, std::forward<ArgsSoFar>(args)...,
+                        loadLuaValue<currArgT>(L, startIdx + currArg)
+                );
+        }
+
+        template<int startIdx, int currArg, typename... ArgsSoFar>
+        static
+        std::enable_if_t<currArg == std::tuple_size<argtuple>::value,
+        R> accumulateArgsLua(const ObjT& obj, lua_State* L, ArgsSoFar... args) {
+                return callMethod(obj, std::forward<Args>(args)...);
+        }
+};
+
+template<typename ObjT, typename MType, MType M>
+std::enable_if_t<std::is_same<typename method_info<ObjT, MType, M>::return_type, void>::value,
+int> callMethodLua(lua_State* L) {
+        const ObjT* obj = static_cast<ObjT*>(lua_touserdata(L, lua_upvalueindex(1)));
+        method_info<ObjT, MType, M>::template accumulateArgsLua<1, 0>(*obj, L);
         return 0;
 }
 
-template<typename R, typename... Args>
-std::enable_if_t<!std::is_same<R, void>::value,
-int> callFn(lua_State* L) {
-        using fntype = std::function<R(Args...)>;
-        fntype* obj = static_cast<fntype*>(lua_touserdata(L, lua_upvalueindex(1)));
-        pushLuaValue(L, callFn2<R, Args...>::template f<0>(obj, L, 1));
+template<typename ObjT, typename MType, MType M>
+std::enable_if_t<!std::is_same<typename method_info<ObjT, MType, M>::return_type, void>::value,
+int> callMethodLua(lua_State* L) {
+        using R = typename method_info<ObjT, MType, M>::return_type;
+        const ObjT* obj = static_cast<ObjT*>(lua_touserdata(L, lua_upvalueindex(1)));
+        R ret = method_info<ObjT, MType, M>::template accumulateArgsLua<1, 0>(*obj, L);
+        pushLuaValue(ret);
         return 1;
 }
+
+};
 
 class FSWatcher;
 
@@ -122,16 +149,10 @@ private:
                 lua_setmetatable(L, -2);
         }
 
-        template<typename R, typename... Args>
-        void pushClosure(const std::function<R(Args...)>& fn) {
-                pushObject(std::move(fn));
-                lua_pushcclosure(L, callFn<R, Args...>, 1);
-        }
-
-        template<typename R, typename... Args>
-        void pushClosure(std::function<R(Args...)>&& fn) {
-                pushObject(std::move(fn));
-                lua_pushcclosure(L, callFn<R, Args...>, 1);
+        template<typename F>
+        void pushClosure(F&& fn) {
+                pushObject(std::forward<F>(fn));
+                lua_pushcclosure(L, detail::callMethodLua<F, decltype(&F::operator()), &F::operator()>, 1);
         }
 public:
         void init();
