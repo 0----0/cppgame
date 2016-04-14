@@ -7,12 +7,15 @@ class TestGame2;
 class EnemyList;
 
 class EnemyAI {
-public:
-        unsigned int id;
+protected:
         std::weak_ptr<Object> objWk;
         unsigned int lastFire;
+public:
+        unsigned int id;
 
-        void spawn(TestGame2& game);
-        void update(EnemyList& list);
-        void die(EnemyList& list);
+        virtual void spawn(TestGame2& game);
+        virtual void update(EnemyList& list);
+        virtual void die(EnemyList& list);
+
+        virtual ~EnemyAI();
 };

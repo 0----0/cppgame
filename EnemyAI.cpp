@@ -45,10 +45,12 @@ void EnemyAI::update(EnemyList& list) {
 void EnemyAI::die(EnemyList& list) {
         if (objWk.expired()) return;
         auto obj = objWk.lock();
-
-        // obj->objTransform[3] = obj->objTransform[3] + glm::vec4{0, 0, 1, 0};
-        // obj->objTransform[3] = glm::vec4(999,999,999,0);
+        
         list.game->getScene().removeObject(obj);
 
         list.removeEnemy(id);
+}
+
+EnemyAI::~EnemyAI() {
+
 }

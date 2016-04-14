@@ -9,6 +9,7 @@
 #include "PlayerController.hpp"
 #include "BulletSystem.hpp"
 #include "EnemyAI.hpp"
+#include "TriShotEnemyAI.hpp"
 #include "EnemyList.hpp"
 #include "LuaInterface.hpp"
 
@@ -116,7 +117,7 @@ void TestGame2::updateLevel() {
                 Enemy enemy {
                         .position = {32.f, 8.f},
                         .bounds = {{-1.0f, -1.0f}, {1.0f, 1.0f}},
-                        .ai = std::make_shared<EnemyAI>()
+                        .ai = std::make_shared<TriShotEnemyAI>()
                 };
                 enemy.ai->spawn(*this);
                 enemies->addEnemy(std::move(enemy));
