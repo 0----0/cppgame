@@ -80,6 +80,10 @@ glm::mat4 TopDownPlayerController::getMatrix() {
         return getFixedTopDownCamera(position, *obj);
 }
 
+std::shared_ptr<Object> TopDownPlayerController::getObj() {
+        return std::shared_ptr<Object>(objWk);
+}
+
 void ShipController::update(InputHandler& input, Scene& scene) {
         if (objWk.expired()) return;
         auto obj = objWk.lock();

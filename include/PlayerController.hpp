@@ -19,6 +19,8 @@ public:
 
         void update(InputHandler& input);
         glm::mat4 getMatrix();
+
+        std::shared_ptr<Object> getObj();
 };
 
 class ShipController : public TopDownPlayerController {

@@ -7,13 +7,11 @@
 
 #include <glm/gtx/rotate_vector.hpp>
 
-void TriShotEnemyAI::update(EnemyList& list) {
+void TriShotEnemyAI::update(EnemyList& list, const EnemyWorldInformation& info) {
         if (objWk.expired()) return;
         auto obj = objWk.lock();
 
-        auto& game = *list.game;
-        auto& scene = game.getScene();
-
+        auto& scene = info.scene;
 
         list.positions[id].x -= 0.15f;
         obj->objTransform[3].x = list.positions[id].x;
@@ -25,7 +23,7 @@ void TriShotEnemyAI::update(EnemyList& list) {
                 auto objPos2d = glm::vec2(objPos.x, objPos.z);
                 auto firePoint = objPos2d;
 
-                auto playerPos = game.player->getPosition();
+                auto playerPos = info.player.getPosition();
                 auto velocity = glm::normalize(playerPos - objPos2d)*0.25f;
                 auto velocity2 = glm::rotate(velocity, (float)M_PI/16.0f);
                 auto velocity3 = glm::rotate(velocity, -(float)M_PI/16.0f);

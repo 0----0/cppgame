@@ -3,10 +3,7 @@
 
 class TriShotEnemyAI : public EnemyAI {
 public:
-
-        // virtual void spawn(TestGame2& game) override;
-        virtual void update(EnemyList& list) override;
-        // virtual void die(EnemyList& list) override;
+        virtual void update(EnemyList& list, const EnemyWorldInformation& info) override;
 
         virtual ~TriShotEnemyAI();
 };

@@ -44,21 +44,21 @@ void EnemyList::removeEnemy(unsigned int i) {
         isAlive[i] = false;
 }
 
-void EnemyList::update(TestGame2& game) {
+void EnemyList::update(const EnemyWorldInformation& info) {
         for (int i = 0; i < ais.size(); i++) {
                 if (!isAlive[i]) continue;
-                ais[i]->update(*this);
+                ais[i]->update(*this, info);
         }
 }
 
-void EnemyList::testCollisions(BulletSystem& bullets) {
+void EnemyList::testCollisions(BulletSystem& bullets, const EnemyWorldInformation& info) {
         AABB bulletBounds = bullets.bounds;
         for (glm::vec2& pos : bullets.bulletPos) {
                 auto bounds = bulletBounds + pos;
                 for (int i = 0; i < aabbs.size(); i++) {
                         if (!isAlive[i]) continue;
                         if (bounds.intersects(aabbs[i] + positions[i])) {
-                                ais[i]->die(*this);
+                                ais[i]->die(*this, info);
                         }
                 }
         }

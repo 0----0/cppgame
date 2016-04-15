@@ -75,7 +75,6 @@ void TestGame2::initScene() {
         scene->bulletSystems.emplace_back(std::move(bulletSystem2));
 
         enemies = std::make_unique<EnemyList>();
-        enemies->game = this;
 }
 
 void TestGame2::initLua() {
@@ -105,13 +104,18 @@ void TestGame2::init() {
 }
 
 void TestGame2::updateLevel() {
+        struct EnemyWorldInformation info {
+                .scene = *this->scene,
+                .player = *player
+        };
+
         if (scene->ticks == 0) {
                 Enemy enemy {
                         .position = {32.f, 16.f},
                         .bounds = {{-1.0f, -1.0f}, {1.0f, 1.0f}},
                         .ai = std::make_shared<EnemyAI>()
                 };
-                enemy.ai->spawn(*this);
+                enemy.ai->spawn(info);
                 enemies->addEnemy(std::move(enemy));
         } else if (scene->ticks == 60) {
                 Enemy enemy {
@@ -119,7 +123,7 @@ void TestGame2::updateLevel() {
                         .bounds = {{-1.0f, -1.0f}, {1.0f, 1.0f}},
                         .ai = std::make_shared<TriShotEnemyAI>()
                 };
-                enemy.ai->spawn(*this);
+                enemy.ai->spawn(info);
                 enemies->addEnemy(std::move(enemy));
         } else if (scene->ticks == 120) {
                 Enemy enemy {
@@ -127,7 +131,7 @@ void TestGame2::updateLevel() {
                         .bounds = {{-1.0f, -1.0f}, {1.0f, 1.0f}},
                         .ai = std::make_shared<EnemyAI>()
                 };
-                enemy.ai->spawn(*this);
+                enemy.ai->spawn(info);
                 enemies->addEnemy(std::move(enemy));
         }
 
@@ -156,8 +160,13 @@ void TestGame2::update(InputHandler& input) {
                 }
         }
 
-        enemies->update(*this);
-        enemies->testCollisions(*scene->bulletSystems[0]);
+        struct EnemyWorldInformation info {
+                .scene = *this->scene,
+                .player = *player
+        };
+
+        enemies->update(info);
+        enemies->testCollisions(*scene->bulletSystems[0], info);
 }
 
 void TestGame2::render(Renderer& renderer) {

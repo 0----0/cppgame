@@ -7,8 +7,8 @@
 #include <vector>
 #include <memory>
 
+struct EnemyWorldInformation;
 class EnemyAI;
-class TestGame2;
 class BulletSystem;
 
 struct Enemy {
@@ -24,12 +24,11 @@ class EnemyList {
 
 public:
         std::vector<glm::vec2> positions;
-        TestGame2* game = nullptr;
         void addEnemy(const Enemy& enemy);
         void addEnemy(Enemy&& enemy);
         void removeEnemy(unsigned int i);
 
-        void update(TestGame2& game);
+        void update(const EnemyWorldInformation& info);
 
-        void testCollisions(BulletSystem& bullets);
+        void testCollisions(BulletSystem& bullets, const EnemyWorldInformation& info);
 };
