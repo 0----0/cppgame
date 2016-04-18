@@ -1,6 +1,5 @@
 #include "TriShotEnemyAI.hpp"
 #include "EnemyList.hpp"
-#include "TestGame2.hpp"
 #include "Object.hpp"
 #include "Scene.hpp"
 #include "PlayerController.hpp"

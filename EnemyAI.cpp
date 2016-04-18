@@ -1,7 +1,6 @@
 #include "EnemyAI.hpp"
 
 #include "AssetManager.hpp"
-#include "TestGame2.hpp"
 #include "Scene.hpp"
 #include "Object.hpp"
 #include "EnemyList.hpp"
