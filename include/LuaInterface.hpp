@@ -78,7 +78,6 @@ struct method_info<ObjT, R (ObjT::*)(Args...), M> {
         static
         std::enable_if_t<currArg == std::tuple_size<argtuple>::value,
         R> accumulateArgsLua(ObjT& obj, lua_State* L, ArgsSoFar... args) {
-                using currArgT = std::tuple_element_t<currArg, argtuple>;
                 return callMethod(obj, std::forward<Args>(args)...);
         }
 };
@@ -142,7 +141,7 @@ private:
         void pushObject(T&& obj) {
                 void* lspace = lua_newuserdata(L, sizeof(T));
                 // T* lobj = static_cast<T*>(lua_newuserdata(L, sizeof(T)));
-                T* lobj = new(lspace) T(std::forward<T>(obj));
+                new(lspace) T(std::forward<T>(obj));
                 lua_newtable(L);
                 lua_pushcfunction(L, destroyObj<T>);
                 lua_setfield(L, -2, "__gc");

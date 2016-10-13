@@ -12,17 +12,9 @@
 #include "TriShotEnemyAI.hpp"
 #include "EnemyList.hpp"
 #include "LuaInterface.hpp"
+#include "Objects.hpp"
 
 void TestGame2::initAssets() {
-        brickGeo = AssetManager::get().getModelBuffer("legobrick.ply");
-        shipGeo  = AssetManager::get().getModelBuffer("ship1 v9.ply");
-
-        auto brickDiffuse = AssetManager::get().getImage("BrickTex.png");
-        auto brickNormals = AssetManager::get().getImage("BrickNormals2.png");
-        brickMat = std::make_shared<Material>(brickDiffuse, brickNormals);
-        auto shipDiffuse = AssetManager::get().getImage("ship1 diffuse AO2.png");
-        auto shipNormals = AssetManager::get().getImage("ship normalsdf.png");
-        shipMat = std::make_shared<Material>(shipDiffuse, shipNormals);
 }
 
 glm::vec3 parseVec3(int intForm) {
@@ -34,16 +26,18 @@ glm::vec3 parseVec3(int intForm) {
 
 void TestGame2::initScene() {
         lua = std::make_unique<LuaInterface>();
+        auto ship = std::make_shared<Object>(Obj::Player::ship());
         scene = std::make_unique<Scene>();
-        // scene->backgroundColor = glm::vec3(0.5f, 0.15f, 0.25f);
         scene->backgroundColor = parseVec3(0x06070A);
-        // scene->sceneAmbient = glm::vec3(0.05, 0.1, 0.2);
         scene->sceneAmbient = parseVec3(0x172B38);
         scene->sceneSpecular = glm::vec3(0.6, 0.5, 0.2f);
-        // scene->sceneSpecular = parseVec3(0xFFFDEB)*0.5f;
-        // scene->sceneDiffuse = glm::vec3(1.0f, 1.0f, 1.0f);
         scene->sceneDiffuse = parseVec3(0x9EC2FF);
-        // scene->backgroundColor = glm::vec3(0.0f, 0.1f, 0.25f);
+
+
+        auto brickGeo = AssetManager::get().getModelBuffer("legobrick.ply");
+        auto brickDiffuse = AssetManager::get().getImage("BrickTex.png");
+        auto brickNormals = AssetManager::get().getImage("BrickNormals2.png");
+        auto brickMat = std::make_shared<Material>(brickDiffuse, brickNormals);
 
         const auto gridSize = 10;
         const auto gridSpacing = 2.f;
@@ -54,7 +48,6 @@ void TestGame2::initScene() {
                 scene->objects.push_back(std::move(obj));
         }}
 
-        ship = std::make_unique<Object>(glm::mat4(), shipGeo, shipMat);
         scene->objects.push_back(ship);
 
         sunRotation = 0.0f;
@@ -90,9 +83,9 @@ void TestGame2::initLua() {
                 scene->sceneDiffuse = glm::vec3(r, g, b);
         });
 
-        lua->addGlobalFn("setShipShininess", [&](float s) {
-                shipMat->shininess = s;
-        });
+        // lua->addGlobalFn("setShipShininess", [&](float s) {
+        //         shipMat->shininess = s;
+        // });
 
         lua->loadFile("scene.lua");
 }

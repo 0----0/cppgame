@@ -16,12 +16,21 @@ public:
         glm::vec3 velocity;
         glm::vec3 torque;
 
+        std::shared_ptr<const Object> prototype;
+
         Object(glm::mat4 objTransform, std::shared_ptr<const GeometryBuffer> geometry,
                std::shared_ptr<Material> material):
                 geometry(std::move(geometry)),
                 material(std::move(material)),
                 objTransform(objTransform)
-        {}
+        {
+        }
+
+        Object(const std::shared_ptr<const Object>& proto):
+                Object(*proto)
+        {
+                prototype = proto;
+        }
 
         glm::mat4 getTransform() const {
                 return objTransform;

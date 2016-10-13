@@ -18,18 +18,10 @@ class TestGame2 {
         std::unique_ptr<Scene> scene;
         std::unique_ptr<LuaInterface> lua;
         std::shared_ptr<const GeometryBuffer> brickGeo;
-        std::shared_ptr<const GeometryBuffer> shipGeo;
-
         std::shared_ptr<Material> brickMat;
-        std::shared_ptr<Material> shipMat;
 
-        std::shared_ptr<Object> ship;
-
-        std::vector<std::unique_ptr<EnemyAI>> enemyAIs;
         std::unique_ptr<EnemyList> enemies;
-
-        std::shared_ptr<BulletSystem> playerBulletSystem;
-        std::shared_ptr<BulletSystem> enemyBulletSystem;
+        std::unique_ptr<ShipController> player;
 
         float sunRotation;
 
@@ -37,7 +29,6 @@ class TestGame2 {
 
         friend class TestGame2Wrp;
 public:
-        std::unique_ptr<ShipController> player;
 
         void init();
 

@@ -101,8 +101,8 @@ UnindexedGeometry::UnindexedGeometry(const Geometry& geo) {
         m_hasTexCoords = geo.hasTexCoords();
         for (auto i : geo.indices) {
                 vertices.push_back(geo.vertices[i]);
-                if (m_hasNormals) normals.push_back(geo.normals[i]);
-                if (m_hasTangents) tangents.push_back(geo.tangents[i]);
-                if (m_hasTexCoords) texCoords.push_back(geo.texCoords[i]);
+                if (hasNormals()) normals.push_back(geo.normals[i]);
+                if (hasTangents()) tangents.push_back(geo.tangents[i]);
+                if (hasTexCoords()) texCoords.push_back(geo.texCoords[i]);
         }
 }

@@ -43,11 +43,12 @@ int main() {
 
                 input.update();
                 if (input.getKey(GLFW_KEY_SPACE)) {
-                        game = [] {
-                                TestGame2Wrp game;
-                                game.init();
-                                return game;
-                        }();
+                        // game = [] {
+                        //         TestGame2Wrp game;
+                        //         game.init();
+                        //         return game;
+                        // }();
+                        game.init();
                 }
                 if (!input.getKey(GLFW_KEY_B))
                         game.update(input);
@@ -55,6 +56,7 @@ int main() {
 
                 renderer.glfwWindow.setTitle(std::string{"Hello, World!  FPS:"}.append(std::to_string(1000000.0f/(float)timer.elapsedUS())).append(")"));
 
-                timer.roundTo(std::chrono::microseconds(16666));
+                // timer.roundTo(std::chrono::microseconds(16666));
+                // timer.roundTo(std::chrono::nanoseconds(16666666));
         }
 }

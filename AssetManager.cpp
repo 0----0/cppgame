@@ -11,16 +11,16 @@ static std::string expandAssetPath(const std::string& name) {
         return path;
 }
 
-static std::string expandTexturePath(const std::string& name) {
-        std::string path = "../assets/textures/";
-        path.append(name);
-        return path;
+template<>
+std::shared_ptr<Geometry>
+loadAsset<Geometry>(const std::string& name) {
+        return std::make_shared<Geometry>(Geometry::fromPly(expandAssetPath(name)));
 }
 
-static std::string expandScriptPath(const std::string& name) {
-        std::string path = "../assets/scripts/";
-        path.append(name);
-        return path;
+template<>
+std::shared_ptr<const GeometryBuffer>
+loadAsset<const GeometryBuffer>(const std::string& name) {
+        return std::make_shared<GeometryBuffer>(*AssetManager::get().getModel(name));
 }
 
 static GL::Texture2D textureFromImage(const std::string& filename) {
@@ -59,54 +59,22 @@ static GL::Texture2D textureFromImage(const std::string& filename) {
         return tex;
 }
 
+static std::string expandTexturePath(const std::string& name) {
+        std::string path = "../assets/textures/";
+        path.append(name);
+        return path;
+}
+
+template<>
 std::shared_ptr<const GL::Texture2D>
-AssetManager::getImage(const std::string& name) {
-        auto iter = images.find(name);
-
-        if (iter != images.end()) {
-                if (!iter->second.expired()) {
-                        return iter->second.lock();
-                }
-        }
-
-        auto path = expandTexturePath(name);
-        auto img = std::make_shared<GL::Texture2D>(textureFromImage(path));
-        images[name] = img;
-
-        return img;
+loadAsset<const GL::Texture2D>(const std::string& name) {
+        return std::make_shared<GL::Texture2D>(textureFromImage(expandTexturePath(name)));
 }
 
-std::shared_ptr<Geometry>
-AssetManager::getModel(const std::string& name) {
-        auto iter = models.find(name);
-
-        if (iter != models.end()) {
-                if (!iter->second.expired()) {
-                        return iter->second.lock();
-                }
-        }
-
-        auto path = expandAssetPath(name);
-        auto img = std::make_shared<Geometry>(Geometry::fromPly(path));
-        models[name] = img;
-
-        return img;
-}
-
-std::shared_ptr<const GeometryBuffer>
-AssetManager::getModelBuffer(const std::string& name) {
-        auto iter = modelBuffers.find(name);
-
-        if (iter != modelBuffers.end()) {
-                if (!iter->second.expired()) {
-                        return iter->second.lock();
-                }
-        }
-
-        auto img = std::make_shared<GeometryBuffer>(*getModel(name));
-        modelBuffers[name] = img;
-
-        return img;
+static std::string expandScriptPath(const std::string& name) {
+        std::string path = "../assets/scripts/";
+        path.append(name);
+        return path;
 }
 
 static std::string readFile(const char* filename) {
@@ -120,18 +88,28 @@ static std::string readFile(const char* filename) {
         return string;
 }
 
+template<>
+std::shared_ptr<std::string>
+loadAsset<std::string>(const std::string& name) {
+        return std::make_shared<std::string>(readFile(expandScriptPath(name).c_str()));
+}
+
+std::shared_ptr<const GL::Texture2D>
+AssetManager::getImage(const std::string& name) {
+        return images.get(name);
+}
+
+std::shared_ptr<Geometry>
+AssetManager::getModel(const std::string& name) {
+        return models.get(name);
+}
+
+std::shared_ptr<const GeometryBuffer>
+AssetManager::getModelBuffer(const std::string& name) {
+        return modelBuffers.get(name);
+}
+
 std::shared_ptr<const std::string>
 AssetManager::getScript(const std::string& name) {
-        auto iter = scripts.find(name);
-
-        if (iter != scripts.end()) {
-                if (!iter->second.expired()) {
-                        return iter->second.lock();
-                }
-        }
-
-        auto script = std::make_shared<std::string>(readFile(expandScriptPath(name).data()));
-        scripts[name] = script;
-
-        return script;
+        return scripts.get(name);
 }

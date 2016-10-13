@@ -138,13 +138,13 @@ Geometry Geometry::fromPly(const std::string& filename) {
         };
 
         nextLine();
-        bool isAscii;
+        // bool isAscii;
         expect(word == "format");
         lineS >> word;
         if(word == "ascii") {
                 lineS >> word;
                 expect(word == "1.0");
-                isAscii = true;
+                // isAscii = true;
         } else {
                 throw std::runtime_error {
                         "Parsing binary .ply files not yet implemented: " + filename
@@ -388,9 +388,16 @@ Geometry Geometry::fromObj(const std::string& filename) {
 Geometry Geometry::fromUnindexed(const UnindexedGeometry& uiGeo) {
         Geometry geo;
         geo.vertices = uiGeo.vertices;
-        if (uiGeo.hasNormals()) geo.normals = uiGeo.normals;
-        if (uiGeo.hasTexCoords()) geo.texCoords = uiGeo.texCoords;
+        if (uiGeo.hasNormals()) {
+                geo.m_hasNormals = true;
+                geo.normals = uiGeo.normals;
+        }
+        if (uiGeo.hasTexCoords())  {
+                geo.m_hasTexCoords = true;
+                geo.texCoords = uiGeo.texCoords;
+        }
         if (uiGeo.hasTangents()) {
+                geo.m_hasTangents = true;
                 geo.tangents = uiGeo.tangents;
                 geo.bitangents = uiGeo.bitangents;
         }
