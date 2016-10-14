@@ -1,7 +1,7 @@
 #include "AssetManager.hpp"
 #include "GL/GL.hpp"
-#include "Geometry.hpp"
-#include "GeometryBuffer.hpp"
+#include "Assets/Geometry.hpp"
+#include "Assets/Geometry/GeometryBuffer.hpp"
 
 #include "extern/stb_image.h"
 

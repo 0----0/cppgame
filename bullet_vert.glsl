@@ -6,6 +6,7 @@ uniform mat4 camera;
 uniform samplerBuffer bulletList;
 
 uniform vec2 scale;
+uniform int asdf;
 
 in vec3 vertPos;
 in vec2 vertTex;
@@ -21,6 +22,8 @@ void main() {
         // _vertPos.y *= 16.0f;
         _vertPos *= vec3(scale,1);
         vec4 vertCameraPos = bulletCameraPos + vec4(_vertPos*bulletCameraPos.w,0);
-        gl_Position = projection * vertCameraPos;
+        vec4 projectedPos = projection * vertCameraPos;
+        projectedPos.z -= 2.0f;
+        gl_Position = projectedPos;
         fragTex = vertTex;
 }

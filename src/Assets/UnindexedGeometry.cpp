@@ -1,6 +1,6 @@
-#include "UnindexedGeometry.hpp"
+#include "Assets/Geometry/UnindexedGeometry.hpp"
 
-#include "Geometry.hpp"
+#include "Assets/Geometry.hpp"
 
 #include "extern/mikktspace.h"
 

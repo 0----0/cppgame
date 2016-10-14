@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GeometryBuffer.hpp"
+#include "Assets/Geometry/GeometryBuffer.hpp"
 #include "Material.hpp"
 
 #include <glm/gtx/transform.hpp>

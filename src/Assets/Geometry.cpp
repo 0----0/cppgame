@@ -1,6 +1,6 @@
-#include "Geometry.hpp"
+#include "Assets/Geometry.hpp"
 
-#include "UnindexedGeometry.hpp"
+#include "Assets/Geometry/UnindexedGeometry.hpp"
 
 bool Geometry::hasNormals() const {
         return m_hasNormals;

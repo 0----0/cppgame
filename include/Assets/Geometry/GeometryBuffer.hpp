@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GL/GL.hpp"
-#include "Geometry.hpp"
+#include "Assets/Geometry/Geometry.hpp"
 
 class GeometryBuffer {
 public:

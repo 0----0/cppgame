@@ -3,7 +3,7 @@
 #include "GL/GL.hpp"
 
 #include "AssetManager.hpp"
-#include "GeometryBuffer.hpp"
+#include "Assets/Geometry/GeometryBuffer.hpp"
 #include "misc.hpp"
 
 #include <memory>

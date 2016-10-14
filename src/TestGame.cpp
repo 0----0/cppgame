@@ -1,7 +1,7 @@
 #include "TestGame.hpp"
 
 #include "AssetManager.hpp"
-#include "GeometryBuffer.hpp"
+#include "Assets/Geometry/GeometryBuffer.hpp"
 #include "Renderer.hpp"
 #include "Camera.hpp"
 #include "Scene.hpp"
