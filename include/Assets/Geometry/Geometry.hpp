@@ -1,15 +1,14 @@
 
 #pragma once
 
-#include <fstream>
 #include <string>
-#include <sstream>
-#include <algorithm>
 #include <vector>
+#include <memory>
 
 #include <glm/glm.hpp>
 
 class UnindexedGeometry;
+class GeometryBuffer;
 
 using uint = unsigned int;
 
@@ -19,6 +18,8 @@ private:
         bool m_hasNormals = false;
         bool m_hasTangents = false;
         bool m_hasTexCoords = false;
+
+        std::unique_ptr<GeometryBuffer> buffer;
 public:
         std::vector<glm::vec3> vertices;
         std::vector<glm::vec3> normals;
@@ -39,6 +40,8 @@ public:
         bool hasTangents() const;
         bool hasTexCoords() const;
 
+        GeometryBuffer& getBuffer();
+
         static Geometry square();
         static Geometry fromPly(const std::string& filename);
 
@@ -46,4 +49,11 @@ public:
 
         static Geometry fromUnindexed(const UnindexedGeometry&);
         static Geometry fromUnindexed(UnindexedGeometry&&);
+
+        Geometry();
+        Geometry(const Geometry&) = delete;
+        Geometry(Geometry&&);
+        Geometry& operator=(const Geometry& rhs) = delete;
+        Geometry& operator=(Geometry&& rhs);
+        ~Geometry();
 };

@@ -7,9 +7,9 @@
 #include "PlayerController.hpp"
 
 void EnemyAI::spawn(const EnemyWorldInformation& info) {
-        auto geo = AssetManager::get().getModelBuffer("legobrick.ply");
-        auto brickDiffuse = AssetManager::get().getImage("BrickTex.png");
-        auto brickNormals = AssetManager::get().getImage("BrickNormals2.png");
+        auto geo = AssetManager::get().getModel("legobrick.ply");
+        auto brickDiffuse = AssetManager::get().getTexture("BrickTex.png");
+        auto brickNormals = AssetManager::get().getTexture("BrickNormals2.png");
         auto mat = std::make_shared<Material>(brickDiffuse, brickNormals);
 
         auto obj = std::make_shared<Object>(glm::mat4(), geo, mat);

@@ -17,8 +17,8 @@ public:
         GL::VertexArray bulletVao;
         GL::TextureBuffer bulletPosTex;
 
-        std::shared_ptr<const GeometryBuffer> quad {
-                AssetManager::get().getModelBuffer("quad.ply")
+        std::shared_ptr<Geometry> quad {
+                AssetManager::get().getModel("quad.ply")
         };
 
         BulletRenderer() {
@@ -32,8 +32,6 @@ public:
                 bulletProg.uniform<int>("textureID", 0);
                 bulletProg.uniform<int>("bulletList", 5);
 
-                bulletProg.uniform("projection", glm::perspectiveFovRH(3.14159f/4.0f, 1024.0f, 768.0f, 0.01f, 128.0f));
-
                 bulletVao.vertexAttribFormat<glm::vec3>(bulletProg.attrib("vertPos"), 0);
                 bulletVao.vertexAttribBinding(bulletProg.attrib("vertPos"), 0);
                 bulletVao.enableVertexAttrib(bulletProg.attrib("vertPos"));
@@ -41,6 +39,10 @@ public:
                 bulletVao.vertexAttribFormat<glm::vec2>(bulletProg.attrib("vertTex"), 0);
                 bulletVao.vertexAttribBinding(bulletProg.attrib("vertTex"), 2);
                 bulletVao.enableVertexAttrib(bulletProg.attrib("vertTex"));
+        }
+
+        void updateProjection(const glm::mat4& projection) {
+                bulletProg.uniform("projection", projection);
         }
 
         void drawBullets(const glm::mat4& cam, unsigned int numBullets,
@@ -60,9 +62,9 @@ public:
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
                 glActiveTexture(GL_TEXTURE5);
                 bulletPosTex.assign(GL_RG32F, bulletPosList);
-                quad->bind(bulletVao);
-                quad->indices.bindElems();
-                glDrawElementsInstanced(GL_TRIANGLES, numBullets*quad->size,
+                quad->getBuffer().bind(bulletVao);
+                quad->getBuffer().indices.bindElems();
+                glDrawElementsInstanced(GL_TRIANGLES, numBullets*quad->getBuffer().size,
                                         GL_UNSIGNED_INT, nullptr, numBullets
                 );
                 glDisable(GL_BLEND);

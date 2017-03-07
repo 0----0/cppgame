@@ -9,7 +9,7 @@
 
 class Object {
 public:
-        std::shared_ptr<const GeometryBuffer> geometry;
+        std::shared_ptr<Geometry> geometry;
         std::shared_ptr<Material> material;
 
         glm::mat4 objTransform;
@@ -18,7 +18,7 @@ public:
 
         std::shared_ptr<const Object> prototype;
 
-        Object(glm::mat4 objTransform, std::shared_ptr<const GeometryBuffer> geometry,
+        Object(glm::mat4 objTransform, std::shared_ptr<Geometry> geometry,
                std::shared_ptr<Material> material):
                 geometry(std::move(geometry)),
                 material(std::move(material)),

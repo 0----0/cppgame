@@ -55,8 +55,6 @@ public:
                 renderProgram.link();
                 renderProgram.use();
 
-                renderProgram.uniform("projection", glm::perspectiveFovRH(3.14159f/2.0f, 1024.0f, 768.0f, 0.01f, 100.0f));
-                renderProgram.uniform("camera", glm::translate(glm::vec3(0, 0, -2)));
                 renderProgram.uniform("obj", glm::mat4());
 
                 renderProgram.uniform<int>("textureID", 0);
@@ -86,13 +84,9 @@ public:
                 return vao;
         }
 
-        void drawObject(const Object& obj) {
-                renderProgram.uniform("obj", obj.objTransform);
-                renderProgram.uniform("shininess", obj.material->shininess);
-                obj.material->bind();
-                obj.geometry->bind(vao);
-                obj.geometry->draw();
-        }
+        void updateProjection(const glm::mat4& projection);
+
+        void drawObject(const Object& obj);
 
         void drawScene(const glm::mat4& camera, const Scene& scene);
 };

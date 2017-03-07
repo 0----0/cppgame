@@ -6,10 +6,24 @@
 Renderer::Renderer():
         shadowRenderer( std::make_unique<ShadowmapRenderer>() ),
         bulletRenderer( std::make_unique<BulletRenderer>() )
-{}
+{
+}
 Renderer::Renderer(Renderer&&) = default;
 Renderer& Renderer::operator=(Renderer&&) = default;
 Renderer::~Renderer() = default;
+
+void Renderer::updateProjection(const glm::mat4& projection) {
+        renderProgram.uniform("projection", projection);
+        bulletRenderer->updateProjection(projection);
+}
+
+void Renderer::drawObject(const Object& obj) {
+        renderProgram.uniform("obj", obj.objTransform);
+        renderProgram.uniform("shininess", obj.material->shininess);
+        obj.material->bind();
+        obj.geometry->getBuffer().bind(vao);
+        obj.geometry->getBuffer().draw();
+}
 
 void Renderer::drawScene(const glm::mat4& camera, const Scene& scene) {
         glm::vec3 cameraPos { glm::inverse(camera) * glm::vec4(0,0,0,1) };
@@ -33,7 +47,7 @@ void Renderer::drawScene(const glm::mat4& camera, const Scene& scene) {
         auto windowSize = glfwWindow.getSize();
         glViewport(0, 0, windowSize.x, windowSize.y);
 
-        renderProgram.uniform("projection", glm::perspectiveFovRH(3.14159f/4.0f, windowSize.x, windowSize.y, 0.01f, 128.0f));
+        updateProjection(glm::perspectiveFovRH(3.14159f/4.0f, windowSize.x, windowSize.y, 0.01f, 128.0f));
 
         const glm::vec3& bg = scene.backgroundColor;
         glClearColor(bg.r, bg.g, bg.b, 1.0f);

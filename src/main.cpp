@@ -14,7 +14,6 @@
 #include "InputHandler.hpp"
 #include "Object.hpp"
 
-#include "TestGame.hpp"
 #include "TestGame2Wrp.hpp"
 
 #include "LuaInterface.hpp"

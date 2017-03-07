@@ -72,8 +72,8 @@ public:
 
         void drawObjectShadow(const Object& obj) {
                 shadowProg.uniform("obj", obj.objTransform);
-                shadowVao.bindVertexBuffer<glm::vec3>(0, obj.geometry->vertices, 0);
-                obj.geometry->draw();
+                shadowVao.bindVertexBuffer<glm::vec3>(0, obj.geometry->getBuffer().vertices, 0);
+                obj.geometry->getBuffer().draw();
         }
 
         void drawShadowmaps(glm::vec3 cameraPos, const Scene& scene) {

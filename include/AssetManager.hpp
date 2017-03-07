@@ -12,26 +12,88 @@ class Geometry;
 class GeometryBuffer;
 class Object;
 
-template<typename T>
-std::shared_ptr<T> loadAsset(const std::string& name);
+struct AssetTagTraitBase {
+        static constexpr bool alwaysReload = false;
+};
 
-template<typename ObjT>
+template<typename T>
+struct AssetTagTrait {
+        //using AssetType;
+        //static AssetType load(const std::string& name);
+        //static AssetType loadDefault();
+};
+
+struct TextureAssetTag;
+struct ModelAssetTag;
+struct ScriptAssetTag;
+struct ObjectAssetTag;
+
+template<>
+struct AssetTagTrait<TextureAssetTag> : public AssetTagTraitBase {
+        using AssetType = GL::Texture2D;
+        static AssetType load(const std::string& name);
+        static AssetType loadDefault();
+};
+
+template<>
+struct AssetTagTrait<ModelAssetTag> : public AssetTagTraitBase {
+        using AssetType = Geometry;
+        static AssetType load(const std::string& name);
+        static AssetType loadDefault();
+};
+
+template<>
+struct AssetTagTrait<ScriptAssetTag> : public AssetTagTraitBase {
+        static constexpr bool alwaysReload = true;
+        using AssetType = std::string;
+        static AssetType load(const std::string& name);
+        static AssetType loadDefault();
+};
+
+template<>
+struct AssetTagTrait<ObjectAssetTag> : public AssetTagTraitBase {
+        using AssetType = Object;
+        static AssetType load(const std::string& name);
+        static AssetType loadDefault();
+};
+
+template<typename AssetTag>
+class Asset {
+private:
+        using AssetT = typename AssetTagTrait<AssetTag>::AssetType;
+
+        bool isLoaded = false;
+        std::string filename;
+        std::shared_ptr<AssetT> asset;
+public:
+
+};
+
+template<typename AssetTag>
 class AssetMap {
 private:
-        std::unordered_map<std::string, std::weak_ptr<ObjT>> map;
-
+        using Trait = AssetTagTrait<AssetTag>;
+        using AssetT = typename AssetTagTrait<AssetTag>::AssetType;
+        std::unordered_map<std::string, std::shared_ptr<AssetT>> map;
+        std::shared_ptr<AssetT> defaultAsset;
 public:
-        std::shared_ptr<ObjT> get(const std::string& name) {
+        std::shared_ptr<AssetT> get(const std::string& name) {
                 auto iter = map.find(name);
 
-                if (iter != map.end()) {
-                        if (!iter->second.expired()) {
-                                return iter->second.lock();
-                        }
+                // if (iter != map.end()) {
+                //         if (!iter->second.expired()) {
+                //                 return iter->second.lock();
+                //         }
+                // }
+                if (!Trait::alwaysReload && iter != map.end()) {
+                        return iter->second;
                 }
 
-                auto path = loadAsset<ObjT>(name);
-                auto asset = loadAsset<ObjT>(name);
+                // auto path = loadAsset<AssetT>(name);
+                // auto asset = loadAsset<AssetT>(name);
+                // map[name] = asset;
+
+                auto asset = std::make_shared<AssetT>(Trait::load(name));
                 map[name] = asset;
 
                 return asset;
@@ -39,18 +101,14 @@ public:
 };
 
 class AssetManager {
-        AssetMap<const GL::Texture2D> images;
-        AssetMap<Geometry> models;
-        AssetMap<const GeometryBuffer> modelBuffers;
-
-        AssetMap<std::string> scripts;
-        AssetMap<Object> objPrototypes;
+        AssetMap<TextureAssetTag> images;
+        AssetMap<ModelAssetTag> models;
+        AssetMap<ScriptAssetTag> scripts;
+        AssetMap<ObjectAssetTag> objPrototypes;
 public:
-        std::shared_ptr<const GL::Texture2D> getImage(const std::string& name);
-        std::shared_ptr<Geometry> getModel(const std::string& name);
-        std::shared_ptr<const GeometryBuffer> getModelBuffer(const std::string& name);
-
+        std::shared_ptr<const GL::Texture2D> getTexture(const std::string& name);
         std::shared_ptr<const std::string> getScript(const std::string& name);
+        std::shared_ptr<Geometry> getModel(const std::string& name);
         std::shared_ptr<Object> getObjPrototype(const std::string& name);
 
         static AssetManager& get() {

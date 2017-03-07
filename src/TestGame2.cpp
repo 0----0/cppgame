@@ -34,9 +34,9 @@ void TestGame2::initScene() {
         scene->sceneDiffuse = parseVec3(0x9EC2FF);
 
 
-        auto brickGeo = AssetManager::get().getModelBuffer("legobrick.ply");
-        auto brickDiffuse = AssetManager::get().getImage("BrickTex.png");
-        auto brickNormals = AssetManager::get().getImage("BrickNormals2.png");
+        auto brickGeo = AssetManager::get().getModel("legobrick.ply");
+        auto brickDiffuse = AssetManager::get().getTexture("BrickTex.png");
+        auto brickNormals = AssetManager::get().getTexture("BrickNormals2.png");
         auto brickMat = std::make_shared<Material>(brickDiffuse, brickNormals);
 
         const auto gridSize = 10;
@@ -55,13 +55,13 @@ void TestGame2::initScene() {
         player = std::make_unique<ShipController>();
         player->objWk = ship;
 
-        auto img = AssetManager::get().getImage("bullet2.png");
+        auto img = AssetManager::get().getTexture("bullet2.png");
         auto bulletSystem = std::make_unique<BulletSystem>(
                 std::move(img), glm::vec2{0.25f, 4.0f}
         );
         scene->bulletSystems.emplace_back(std::move(bulletSystem));
 
-        auto img2 = AssetManager::get().getImage("bullet1.png");
+        auto img2 = AssetManager::get().getTexture("bullet1.png");
         auto bulletSystem2 = std::make_unique<BulletSystem>(
                 std::move(img2), glm::vec2{1.0f, 1.0f}
         );
@@ -69,6 +69,16 @@ void TestGame2::initScene() {
 
         enemies = std::make_unique<EnemyList>();
 }
+
+struct Boop {
+        int boop() const {
+                return 2;
+        }
+
+        static void pushLuaMethods(LuaInterface& lua) {
+                lua.setMethod<Boop, decltype(&Boop::boop), &Boop::boop>("boop");
+        }
+};
 
 void TestGame2::initLua() {
         lua->addGlobalFn("setSceneAmbient", [&](float r, float g, float b) {
@@ -83,9 +93,7 @@ void TestGame2::initLua() {
                 scene->sceneDiffuse = glm::vec3(r, g, b);
         });
 
-        // lua->addGlobalFn("setShipShininess", [&](float s) {
-        //         shipMat->shininess = s;
-        // });
+        lua->setObj("boop", Boop());
 
         lua->loadFile("scene.lua");
 }

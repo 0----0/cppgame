@@ -1,5 +1,9 @@
-#include "Assets/Geometry.hpp"
+#include <sstream>
+#include <fstream>
+#include <algorithm>
 
+#include "Assets/Geometry/Geometry.hpp"
+#include "Assets/Geometry/GeometryBuffer.hpp"
 #include "Assets/Geometry/UnindexedGeometry.hpp"
 
 bool Geometry::hasNormals() const {
@@ -430,3 +434,15 @@ Geometry Geometry::fromUnindexed(UnindexedGeometry&& uiGeo) {
         }
         return geo;
 }
+
+GeometryBuffer& Geometry::getBuffer() {
+        if (!buffer) {
+                buffer = std::make_unique<GeometryBuffer>(*this);
+        }
+        return *buffer;
+}
+
+Geometry::Geometry() = default;
+Geometry::Geometry(Geometry&&) = default;
+Geometry& Geometry::operator=(Geometry&& rhs) = default;
+Geometry::~Geometry() = default;

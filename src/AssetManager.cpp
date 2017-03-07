@@ -1,7 +1,10 @@
+#include <fstream>
+
 #include "AssetManager.hpp"
 #include "GL/GL.hpp"
 #include "Assets/Geometry.hpp"
 #include "Assets/Geometry/GeometryBuffer.hpp"
+#include "LuaInterface.hpp"
 
 #include "extern/stb_image.h"
 
@@ -11,16 +14,10 @@ static std::string expandAssetPath(const std::string& name) {
         return path;
 }
 
-template<>
-std::shared_ptr<Geometry>
-loadAsset<Geometry>(const std::string& name) {
-        return std::make_shared<Geometry>(Geometry::fromPly(expandAssetPath(name)));
-}
 
-template<>
-std::shared_ptr<const GeometryBuffer>
-loadAsset<const GeometryBuffer>(const std::string& name) {
-        return std::make_shared<GeometryBuffer>(*AssetManager::get().getModel(name));
+typename AssetTagTrait<ModelAssetTag>::AssetType
+AssetTagTrait<ModelAssetTag>::load(const std::string& name) {
+        return Geometry::fromPly(expandAssetPath(name));
 }
 
 static GL::Texture2D textureFromImage(const std::string& filename) {
@@ -65,10 +62,9 @@ static std::string expandTexturePath(const std::string& name) {
         return path;
 }
 
-template<>
-std::shared_ptr<const GL::Texture2D>
-loadAsset<const GL::Texture2D>(const std::string& name) {
-        return std::make_shared<GL::Texture2D>(textureFromImage(expandTexturePath(name)));
+typename AssetTagTrait<TextureAssetTag>::AssetType
+AssetTagTrait<TextureAssetTag>::load(const std::string& name) {
+        return textureFromImage(expandTexturePath(name));
 }
 
 static std::string expandScriptPath(const std::string& name) {
@@ -88,25 +84,19 @@ static std::string readFile(const char* filename) {
         return string;
 }
 
-template<>
-std::shared_ptr<std::string>
-loadAsset<std::string>(const std::string& name) {
-        return std::make_shared<std::string>(readFile(expandScriptPath(name).c_str()));
+typename AssetTagTrait<ScriptAssetTag>::AssetType
+AssetTagTrait<ScriptAssetTag>::load(const std::string& name) {
+        return readFile(expandScriptPath(name).c_str());
 }
 
 std::shared_ptr<const GL::Texture2D>
-AssetManager::getImage(const std::string& name) {
+AssetManager::getTexture(const std::string& name) {
         return images.get(name);
 }
 
 std::shared_ptr<Geometry>
 AssetManager::getModel(const std::string& name) {
         return models.get(name);
-}
-
-std::shared_ptr<const GeometryBuffer>
-AssetManager::getModelBuffer(const std::string& name) {
-        return modelBuffers.get(name);
 }
 
 std::shared_ptr<const std::string>

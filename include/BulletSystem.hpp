@@ -26,7 +26,7 @@ public:
         AABB bounds{scale/-2.0f, scale/2.0f};
 
         std::shared_ptr<const GL::Texture2D> img {
-                AssetManager::get().getImage("bullet2.png")
+                AssetManager::get().getTexture("bullet2.png")
         };
 
         BulletSystem(std::shared_ptr<const GL::Texture2D> img, glm::vec2 scale):
