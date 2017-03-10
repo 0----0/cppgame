@@ -17,8 +17,6 @@ class LuaInterface;
 class TestGame2 {
         std::unique_ptr<Scene> scene;
         std::unique_ptr<LuaInterface> lua;
-        std::shared_ptr<const GeometryBuffer> brickGeo;
-        std::shared_ptr<Material> brickMat;
 
         std::unique_ptr<EnemyList> enemies;
         std::unique_ptr<ShipController> player;
