@@ -51,6 +51,7 @@ void TestGame2::initScene() {
         scene->objects.push_back(ship);
 
         sunRotation = 0.0f;
+        sunElevation = 0.0f;
 
         player = std::make_unique<ShipController>();
         player->objWk = ship;
@@ -142,9 +143,15 @@ void TestGame2::update(InputHandler& input) {
         updateLevel();
         scene->update();
 
-        scene->sunDirection = glm::vec3(glm::rotate(sunRotation,glm::vec3{0,1,0})*glm::vec4(glm::normalize(glm::vec3{-1,-1,-1}),1));
+        auto sun = glm::vec4(glm::normalize(glm::vec3(-1,-1,0)),1);
+        sun = glm::rotate(sunElevation, glm::vec3(0,0,1)) * sun;
+        sun = glm::rotate(sunRotation, glm::vec3(0,1,0)) * sun;
+        scene->sunDirection = sun;
         if (input.getKey(GLFW_KEY_F)) {
                 sunRotation += 0.01f;
+        }
+        if (input.getKey(GLFW_KEY_G)) {
+                sunElevation += 0.01f;
         }
 
         player->update(input, *scene);

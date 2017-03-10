@@ -47,7 +47,7 @@ void Renderer::drawScene(const glm::mat4& camera, const Scene& scene) {
         auto windowSize = glfwWindow.getSize();
         glViewport(0, 0, windowSize.x, windowSize.y);
 
-        updateProjection(glm::perspectiveFovRH(3.14159f/4.0f, windowSize.x, windowSize.y, 0.01f, 128.0f));
+        updateProjection(glm::perspectiveFovRH(3.14159f/8.0f, windowSize.x, windowSize.y, 0.01f, 128.0f));
 
         const glm::vec3& bg = scene.backgroundColor;
         glClearColor(bg.r, bg.g, bg.b, 1.0f);

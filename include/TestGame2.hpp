@@ -24,6 +24,7 @@ class TestGame2 {
         std::unique_ptr<ShipController> player;
 
         float sunRotation;
+        float sunElevation;
 
         void updateLevel();
 
