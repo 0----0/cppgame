@@ -31,8 +31,8 @@ public:
                 });
                 window.setMouseButtonCallback([&](GLFW::Window& window, int button, int action, int mods) {
                         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-                                mouseFree = false;
-                                ::glfwSetInputMode(window(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                                // mouseFree = false;
+                                // ::glfwSetInputMode(window(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                         }
                 });
                 window.setKeyCallback([&](GLFW::Window& window, int key, int scancode, int action, int mods) {

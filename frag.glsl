@@ -147,7 +147,8 @@ void main() {
         vec3 genBitangent = fragBitangent.x * cross(fragNormal, fragTangent);
         vec3 realNorm = normalize(normMap.x * fragTangent + normMap.y * genBitangent + normMap.z * fragNormal);
 
-        vec3 baseColor = texture(textureID, _fragTex).rgb;
+        vec3 baseColor = pow(texture(textureID, _fragTex).rgb,vec3(2.2));
+        // vec3 baseColor = texture(textureID, _fragTex).rgb;
         vec3 diffuseColor = baseColor * sceneDiffuse;
         vec3 ambientColor = baseColor * sceneAmbient;
         vec3 specularColor = baseColor * sceneSpecular;
@@ -172,10 +173,11 @@ void main() {
                 // fragColor = vec4(vec3(diffuse.r, diffuse.g, shadeasdf(worldPos, fragNormal)), 1.0f);
                 specular *= visibility;
                 // if(visibility == 0.0f) { visibility += 0.4; }
-                visibility = visibility*0.8f + 0.2f;
+                // visibility = visibility*0.8f + 0.2f;
+                 visibility = visibility*0.97f + 0.03f;
                 diffuse *= visibility;
         }
 
+        // fragColor = vec4(pow(ambient + diffuse + specular, vec3(1/2.2)), 1.0);
         fragColor = vec4(ambient + diffuse + specular, 1.0);
-        // fragColor = vec4(vec3(diffuseIntensity)*1000.0f, 1.0);
 }

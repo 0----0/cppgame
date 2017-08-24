@@ -26,6 +26,12 @@ void Renderer::drawObject(const Object& obj) {
 }
 
 void Renderer::drawScene(const glm::mat4& camera, const Scene& scene) {
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+        glDisable(GL_BLEND);
+        glDisable(GL_SCISSOR_TEST);
+        glEnable(GL_FRAMEBUFFER_SRGB);
+
         glm::vec3 cameraPos { glm::inverse(camera) * glm::vec4(0,0,0,1) };
         glm::vec3 shadowCenter {0,0,0};
 
@@ -47,7 +53,7 @@ void Renderer::drawScene(const glm::mat4& camera, const Scene& scene) {
         auto windowSize = glfwWindow.getSize();
         glViewport(0, 0, windowSize.x, windowSize.y);
 
-        updateProjection(glm::perspectiveFovRH(3.14159f/8.0f, windowSize.x, windowSize.y, 0.01f, 128.0f));
+        updateProjection(glm::perspectiveFovRH(3.14159f/4.0f, windowSize.x, windowSize.y, 0.01f, 128.0f));
 
         const glm::vec3& bg = scene.backgroundColor;
         glClearColor(bg.r, bg.g, bg.b, 1.0f);
@@ -66,5 +72,6 @@ void Renderer::drawScene(const glm::mat4& camera, const Scene& scene) {
                 bulletRenderer->drawBullets(camera, bulletSystem->numBullets(), bulletSystem->getBuffer(), *bulletSystem->img, bulletSystem->getScale());
         }
 
-        glfwWindow.swapBuffers();
+        glDisable(GL_FRAMEBUFFER_SRGB);
+        // glfwWindow.swapBuffers();
 }

@@ -11,7 +11,7 @@ namespace Obj {
         namespace Player {
                 std::shared_ptr<const Object> ship() {
                         static std::weak_ptr<Object> objWk;
-                        auto shipDiffuse = AssetManager::get().getTexture("Diffuse i4.png");
+                        auto shipDiffuse = AssetManager::get().getTexture("Diffuse Baked i4.png");
                         auto shipNormals = AssetManager::get().getTexture("DefaultNormals.png");
                         auto shipMat = std::make_shared<Material>(shipDiffuse, shipNormals);
                         shipMat->shininess = 32.0f;
